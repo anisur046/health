@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Reports from './pages/Reports';
@@ -11,10 +11,11 @@ import About from './pages/About';
 export default function App() {
   // track admin authentication so navbar can show Reports after admin login
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!localStorage.getItem('adminToken'));
+  const location = useLocation();
 
   useEffect(() => {
     const onAuth = () => setAdminAuthenticated(!!localStorage.getItem('adminToken'));
-    const onCustom = (e) => onAuth();
+    const onCustom = onAuth;
     const onStorage = (e) => {
       if (e.key === 'adminToken') setAdminAuthenticated(!!e.newValue);
     };
@@ -26,15 +27,8 @@ export default function App() {
     };
   }, []);
 
-  const ping = async () => {
-    try {
-      const res = await fetch('/api/hello');
-      const j = await res.json();
-      alert(j.message);
-    } catch (e) {
-      alert('Request failed: ' + e.message);
-    }
-  };
+  // Determine if current route is home so we can render it full-screen outside the page container
+  const isHome = location.pathname === '/';
 
   return (
     <div className="app-root">
@@ -64,18 +58,24 @@ export default function App() {
         </NavLink>
       </nav>
 
-      <main className="page-container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/citizen" element={<Citizen />} />
-          <Route path="/citizen/appointments" element={<CitizenForm />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </main>
+      {/* Render Home full-screen outside .page-container so it can fill the viewport */}
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+
+      {!isHome && (
+        <main className="page-container">
+          <Routes>
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/citizen" element={<Citizen />} />
+            <Route path="/citizen/appointments" element={<CitizenForm />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </main>
+      )}
     </div>
   );
 }

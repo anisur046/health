@@ -153,128 +153,130 @@ export default function Reports() {
   };
 
   return (
-    <div className="reports-container" ref={containerRef}>
-      <h3>Reports</h3>
-      {notice && <div className="notice">{notice}</div>}
-      {error && <div className="error">{error}</div>}
+    <div className="page-with-bg page-with-bg--reports">
+      <div className="reports-container" ref={containerRef}>
+        <h3>Reports</h3>
+        {notice && <div className="notice">{notice}</div>}
+        {error && <div className="error">{error}</div>}
 
-      {isLoading ? (
-        <p style={{ color: '#586069' }}>Loading reports…</p>
-      ) : (
-        <>
-          <p className="reports-summary">Summary: {appointments.length} total — {requestedAppts.length} requested, {approvedAppts.length} approved, {rejectedAppts.length} rejected</p>
+        {isLoading ? (
+          <p style={{ color: '#586069' }}>Loading reports…</p>
+        ) : (
+          <>
+            <p className="reports-summary">Summary: {appointments.length} total — {requestedAppts.length} requested, {approvedAppts.length} approved, {rejectedAppts.length} rejected</p>
 
-          <div className="reports-actions" style={{ marginBottom: 10, alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <label htmlFor="report-filter" style={{ color: '#586069', fontWeight: 600 }}>Show:</label>
-              <select id="report-filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #e1e6ec' }}>
-                <option value="all">All</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+            <div className="reports-actions" style={{ marginBottom: 10, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <label htmlFor="report-filter" style={{ color: '#586069', fontWeight: 600 }}>Show:</label>
+                <select id="report-filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #e1e6ec' }}>
+                  <option value="all">All</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
 
-              <label htmlFor="from-date" style={{ color: '#586069', fontWeight: 600, marginLeft: 12 }}>From</label>
-              <input id="from-date" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #e1e6ec' }} />
+                <label htmlFor="from-date" style={{ color: '#586069', fontWeight: 600, marginLeft: 12 }}>From</label>
+                <input id="from-date" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #e1e6ec' }} />
 
-              <label htmlFor="to-date" style={{ color: '#586069', fontWeight: 600 }}>To</label>
-              <input id="to-date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #e1e6ec' }} />
+                <label htmlFor="to-date" style={{ color: '#586069', fontWeight: 600 }}>To</label>
+                <input id="to-date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #e1e6ec' }} />
 
-              <button className="btn-muted" type="button" onClick={() => { setFromDate(''); setToDate(''); }} style={{ marginLeft: 6 }}>Clear</button>
+                <button className="btn-muted" type="button" onClick={() => { setFromDate(''); setToDate(''); }} style={{ marginLeft: 6 }}>Clear</button>
+              </div>
+
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                {/* fullscreen toggle */}
+                <button className="btn-muted" onClick={() => (isFullscreen ? exitFullScreen() : enterFullScreen())} style={{ marginRight: 8 }}>{isFullscreen ? 'Exit full screen' : 'Full screen'}</button>
+                {/* export the currently filtered list */}
+                <button className="btn-primary" onClick={() => downloadCSV(exportList, 'appointments.csv')} style={{ marginRight: 8 }}>Download CSV (Excel)</button>
+                <button className="btn-primary" onClick={() => downloadPDF(exportList, 'appointments.pdf')}>Download PDF</button>
+              </div>
             </div>
 
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-              {/* fullscreen toggle */}
-              <button className="btn-muted" onClick={() => (isFullscreen ? exitFullScreen() : enterFullScreen())} style={{ marginRight: 8 }}>{isFullscreen ? 'Exit full screen' : 'Full screen'}</button>
-              {/* export the currently filtered list */}
-              <button className="btn-primary" onClick={() => downloadCSV(exportList, 'appointments.csv')} style={{ marginRight: 8 }}>Download CSV (Excel)</button>
-              <button className="btn-primary" onClick={() => downloadPDF(exportList, 'appointments.pdf')}>Download PDF</button>
-            </div>
-          </div>
+            {/* Render lists according to filter selection */}
+            {selectedFilter === 'all' ? (
+              <div className="reports-grid">
+                <div className="reports-column">
+                  <h4>Approved</h4>
+                  {approvedAppts.length === 0 ? (
+                    <p style={{ color: '#586069' }}>No approved appointments.</p>
+                  ) : (
+                    <div className="table-wrap"><table className="reports-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>User</th>
+                          <th>Doctor</th>
+                          <th>When</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvedAppts.map((a) => (
+                          <tr key={`approved-${a.id}`}>
+                            <td>{a.id}</td>
+                            <td>{a.user ? a.user.name : a.userId}</td>
+                            <td>{a.doctor ? a.doctor.name : a.doctorId}</td>
+                            <td>{a.datetime}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table></div>
+                  )}
+                </div>
 
-          {/* Render lists according to filter selection */}
-          {selectedFilter === 'all' ? (
-            <div className="reports-grid">
-              <div className="reports-column">
+                <div className="reports-column">
+                  <h4>Rejected</h4>
+                  {rejectedAppts.length === 0 ? (
+                    <p style={{ color: '#586069' }}>No rejected appointments.</p>
+                  ) : (
+                    <div className="table-wrap"><table className="reports-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>User</th>
+                          <th>Doctor</th>
+                          <th>Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rejectedAppts.map((a) => (
+                          <tr key={`rejected-${a.id}`}>
+                            <td>{a.id}</td>
+                            <td>{a.user ? a.user.name : a.userId}</td>
+                            <td>{a.doctor ? a.doctor.name : a.doctorId}</td>
+                            <td>{a.rejectionReason || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table></div>
+                  )}
+                </div>
+              </div>
+            ) : selectedFilter === 'approved' ? (
+              <div>
                 <h4>Approved</h4>
-                {approvedAppts.length === 0 ? (
-                  <p style={{ color: '#586069' }}>No approved appointments.</p>
-                ) : (
-                  <div className="table-wrap"><table className="reports-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Doctor</th>
-                        <th>When</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {approvedAppts.map((a) => (
-                        <tr key={`approved-${a.id}`}>
-                          <td>{a.id}</td>
-                          <td>{a.user ? a.user.name : a.userId}</td>
-                          <td>{a.doctor ? a.doctor.name : a.doctorId}</td>
-                          <td>{a.datetime}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table></div>
+                {approvedAppts.length === 0 ? <p style={{ color: '#586069' }}>No approved appointments.</p> : (
+                  <div className="table-wrap"><table className="reports-table"><thead><tr><th>ID</th><th>User</th><th>Doctor</th><th>When</th></tr></thead><tbody>
+                    {approvedAppts.map((a) => (
+                      <tr key={`approved-${a.id}`}><td>{a.id}</td><td>{a.user ? a.user.name : a.userId}</td><td>{a.doctor ? a.doctor.name : a.doctorId}</td><td>{a.datetime}</td></tr>
+                    ))}
+                  </tbody></table></div>
                 )}
               </div>
-
-              <div className="reports-column">
+            ) : (
+              <div>
                 <h4>Rejected</h4>
-                {rejectedAppts.length === 0 ? (
-                  <p style={{ color: '#586069' }}>No rejected appointments.</p>
-                ) : (
-                  <div className="table-wrap"><table className="reports-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Doctor</th>
-                        <th>Reason</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rejectedAppts.map((a) => (
-                        <tr key={`rejected-${a.id}`}>
-                          <td>{a.id}</td>
-                          <td>{a.user ? a.user.name : a.userId}</td>
-                          <td>{a.doctor ? a.doctor.name : a.doctorId}</td>
-                          <td>{a.rejectionReason || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table></div>
+                {rejectedAppts.length === 0 ? <p style={{ color: '#586069' }}>No rejected appointments.</p> : (
+                  <div className="table-wrap"><table className="reports-table"><thead><tr><th>ID</th><th>User</th><th>Doctor</th><th>Reason</th></tr></thead><tbody>
+                    {rejectedAppts.map((a) => (
+                      <tr key={`rejected-${a.id}`}><td>{a.id}</td><td>{a.user ? a.user.name : a.userId}</td><td>{a.doctor ? a.doctor.name : a.doctorId}</td><td>{a.rejectionReason || '-'}</td></tr>
+                    ))}
+                  </tbody></table></div>
                 )}
               </div>
-            </div>
-          ) : selectedFilter === 'approved' ? (
-            <div>
-              <h4>Approved</h4>
-              {approvedAppts.length === 0 ? <p style={{ color: '#586069' }}>No approved appointments.</p> : (
-                <div className="table-wrap"><table className="reports-table"><thead><tr><th>ID</th><th>User</th><th>Doctor</th><th>When</th></tr></thead><tbody>
-                  {approvedAppts.map((a) => (
-                    <tr key={`approved-${a.id}`}><td>{a.id}</td><td>{a.user ? a.user.name : a.userId}</td><td>{a.doctor ? a.doctor.name : a.doctorId}</td><td>{a.datetime}</td></tr>
-                  ))}
-                </tbody></table></div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <h4>Rejected</h4>
-              {rejectedAppts.length === 0 ? <p style={{ color: '#586069' }}>No rejected appointments.</p> : (
-                <div className="table-wrap"><table className="reports-table"><thead><tr><th>ID</th><th>User</th><th>Doctor</th><th>Reason</th></tr></thead><tbody>
-                  {rejectedAppts.map((a) => (
-                    <tr key={`rejected-${a.id}`}><td>{a.id}</td><td>{a.user ? a.user.name : a.userId}</td><td>{a.doctor ? a.doctor.name : a.doctorId}</td><td>{a.rejectionReason || '-'}</td></tr>
-                  ))}
-                </tbody></table></div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
-  );
+   );
  }

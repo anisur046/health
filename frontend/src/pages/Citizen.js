@@ -174,91 +174,93 @@ export default function Citizen() {
   };
 
   return (
-    <div className="citizen-container">
+    <div className="page-with-bg page-with-bg--citizen">
+      <div className="citizen-container">
       <h2>Citizen Portal</h2>
 
-      {notice && <div className="notice" role="status">{notice}</div>}
-      {error && <div className="error" role="alert">{error}</div>}
+       {notice && <div className="notice" role="status">{notice}</div>}
+       {error && <div className="error" role="alert">{error}</div>}
 
-      {user ? (
-        <div className="citizen-panel">
-          <p>Signed in as <strong>{user.name}</strong> ({user.email})</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link className="cta" to="/citizen/appointments">Request Appointment</Link>
-            <button className="btn-muted" onClick={handleLogout}>Logout</button>
-          </div>
-        </div>
-      ) : (
-      <>
-      <div className="mode-toggle">
-        <button
-          className={mode === 'login' ? 'btn-primary' : 'btn-muted'}
-          onClick={() => { setMode('login'); setError(''); setNotice(''); }}
-        >
-          Login
-        </button>
-        <button
-          className={mode === 'register' ? 'btn-primary' : 'btn-muted'}
-          onClick={() => { setMode('register'); setError(''); setNotice(''); }}
-        >
-          Register
-        </button>
+       {user ? (
+         <div className="citizen-panel">
+           <p>Signed in as <strong>{user.name}</strong> ({user.email})</p>
+           <div style={{ display: 'flex', gap: 8 }}>
+             <Link className="cta" to="/citizen/appointments">Request Appointment</Link>
+             <button className="btn-muted" onClick={handleLogout}>Logout</button>
+           </div>
+         </div>
+       ) : (
+       <>
+       <div className="mode-toggle">
+         <button
+           className={mode === 'login' ? 'btn-primary' : 'btn-muted'}
+           onClick={() => { setMode('login'); setError(''); setNotice(''); }}
+         >
+           Login
+         </button>
+         <button
+           className={mode === 'register' ? 'btn-primary' : 'btn-muted'}
+           onClick={() => { setMode('register'); setError(''); setNotice(''); }}
+         >
+           Register
+         </button>
+       </div>
+
+       {mode === 'register' ? (
+         <form className="citizen-form" onSubmit={handleRegister} aria-label="Citizen register form">
+           <label htmlFor="citizen-name">Full name</label>
+           <input id="citizen-name" value={name} onChange={(e) => setName(e.target.value)} />
+
+           <label htmlFor="citizen-email">Email</label>
+           <input id="citizen-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+           <label htmlFor="citizen-pass">Password</label>
+           <input id="citizen-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+           <div className="form-row">
+             <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Registering...' : 'Create account'}</button>
+             <button type="button" className="btn-muted" onClick={() => { setMode('login'); setError(''); }}>{'Back to login'}</button>
+           </div>
+         </form>
+       ) : (
+         <form className="citizen-form" onSubmit={handleLogin} aria-label="Citizen login form">
+           <label htmlFor="login-email">Email</label>
+           <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+           <label htmlFor="login-pass">Password</label>
+           <input id="login-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+           <div className="form-row">
+             <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
+             <button type="button" className="forgot-link" onClick={() => { setShowForgot(true); setError(''); }}>
+               Forgot password?
+             </button>
+           </div>
+         </form>
+       )}
+
+       {showForgot && (
+         <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Forgot password dialog">
+           <div className="modal">
+             <h3>Reset password</h3>
+             <p>Enter your email and we'll send reset instructions if the account exists.</p>
+             <form onSubmit={handleForgot}>
+               <label htmlFor="forgot-email">Email</label>
+               <input id="forgot-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+
+               <div className="form-row">
+                 <button type="submit" className="btn-primary" disabled={sending}>{sending ? 'Sending...' : 'Send reset'}</button>
+                 <button type="button" className="btn-muted" onClick={() => setShowForgot(false)}>Cancel</button>
+               </div>
+             </form>
+           </div>
+         </div>
+       )}
+       </>
+       )}
+
+       <p className="form-help">Registered users can sign in and manage appointments. Demo accounts are stored in the local backend for development.</p>
       </div>
-
-      {mode === 'register' ? (
-        <form className="citizen-form" onSubmit={handleRegister} aria-label="Citizen register form">
-          <label htmlFor="citizen-name">Full name</label>
-          <input id="citizen-name" value={name} onChange={(e) => setName(e.target.value)} />
-
-          <label htmlFor="citizen-email">Email</label>
-          <input id="citizen-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-
-          <label htmlFor="citizen-pass">Password</label>
-          <input id="citizen-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-
-          <div className="form-row">
-            <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Registering...' : 'Create account'}</button>
-            <button type="button" className="btn-muted" onClick={() => { setMode('login'); setError(''); }}>{'Back to login'}</button>
-          </div>
-        </form>
-      ) : (
-        <form className="citizen-form" onSubmit={handleLogin} aria-label="Citizen login form">
-          <label htmlFor="login-email">Email</label>
-          <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-
-          <label htmlFor="login-pass">Password</label>
-          <input id="login-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-
-          <div className="form-row">
-            <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
-            <button type="button" className="forgot-link" onClick={() => { setShowForgot(true); setError(''); }}>
-              Forgot password?
-            </button>
-          </div>
-        </form>
-      )}
-
-      {showForgot && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Forgot password dialog">
-          <div className="modal">
-            <h3>Reset password</h3>
-            <p>Enter your email and we'll send reset instructions if the account exists.</p>
-            <form onSubmit={handleForgot}>
-              <label htmlFor="forgot-email">Email</label>
-              <input id="forgot-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
-
-              <div className="form-row">
-                <button type="submit" className="btn-primary" disabled={sending}>{sending ? 'Sending...' : 'Send reset'}</button>
-                <button type="button" className="btn-muted" onClick={() => setShowForgot(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      </>
-      )}
-
-      <p className="form-help">Registered users can sign in and manage appointments. Demo accounts are stored in the local backend for development.</p>
     </div>
   );
 }
