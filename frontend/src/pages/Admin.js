@@ -6,6 +6,18 @@ const DEFAULT_DEV_BACKEND = 'http://localhost:3001/api';
 export default function Admin() {
     const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
+    // Detect a likely misconfiguration: production build using relative /api on a static host
+    const isProdNoApi = (() => {
+        try {
+            const host = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
+            const isLocal = host === 'localhost' || host === '127.0.0.1';
+            // If API_BASE is relative (starts with '/') and we are not on localhost, it's likely the backend is not deployed
+            return (API_BASE && API_BASE.startsWith('/')) && !isLocal && process.env.NODE_ENV === 'production';
+        } catch (e) {
+            return false;
+        }
+    })();
+
     // helper: read response as text and safely parse JSON if possible
     const parseResponse = async (res) => {
         const text = await res.text();
@@ -477,6 +489,13 @@ export default function Admin() {
 
                 {notice && <div className="notice" role="status">{notice}</div>}
                 {error && <div className="error" role="alert">{error}</div>}
+                {isProdNoApi && (
+                    <div className="error" role="alert" style={{ marginBottom: 12 }}>
+                        This site was built without a backend URL. GitHub Pages (and other static hosts) cannot handle API POST requests at <code>/api</code>.
+                        Build the frontend with REACT_APP_API_BASE set to your deployed backend (for example:
+                        <code>REACT_APP_API_BASE=https://my-backend.example.com/api</code>) and redeploy the site.
+                    </div>
+                )}
 
                 {!adminToken ? (
                     <>
