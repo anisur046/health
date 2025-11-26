@@ -8,6 +8,7 @@ export default function CitizenForm() {
   const backendBase = API_BASE && API_BASE.startsWith('http') ? API_BASE.replace(/\/api$/, '') : '';
 
   const [doctors, setDoctors] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [doctorId, setDoctorId] = useState('');
   const [datetime, setDatetime] = useState('');
@@ -34,13 +35,20 @@ export default function CitizenForm() {
     setLoadingDoctors(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/doctors`);
+      // if the user is authenticated, use the citizen-only endpoint which returns admin-scheduled slots
+      const url = token ? `${API_BASE}/citizen/doctors` : `${API_BASE}/doctors`;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(url, { headers });
       const data = await parseResponse(res);
       if (!res.ok) {
         setError(data.message || `Unable to load doctors (${res.status})`);
         return;
       }
-      setDoctors(data.doctors || []);
+      const list = data.doctors || [];
+      setDoctors(list);
+      // if a doctor is already selected, update slots
+      const sel = list.find(d => d.id === doctorId);
+      setAvailableSlots(sel ? (sel.availableSlots || []) : []);
     } catch (err) {
       setError(err.message || 'Unable to load doctors');
     } finally {
@@ -72,7 +80,7 @@ export default function CitizenForm() {
   useEffect(() => {
     fetchDoctors();
     if (token) fetchAppointments();
-  }, []);
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +91,7 @@ export default function CitizenForm() {
       return;
     }
     if (!doctorId || !datetime) {
-      setError('Please select a doctor and date/time.');
+      setError('Please select a doctor and a timeslot.');
       return;
     }
     setSubmitting(true);
@@ -110,6 +118,14 @@ export default function CitizenForm() {
       setSubmitting(false);
     }
   };
+
+  // When doctor selection changes, update available slots
+  useEffect(() => {
+    const d = doctors.find(x => x.id === doctorId);
+    setAvailableSlots(d ? (d.availableSlots || []) : []);
+    // reset datetime when doctor changes
+    setDatetime('');
+  }, [doctorId, doctors]);
 
   if (!token) {
     return (
@@ -142,8 +158,24 @@ export default function CitizenForm() {
             ))}
           </select>
 
-          <label htmlFor="datetime">Date & time</label>
-          <input id="datetime" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
+          <label htmlFor="datetime">Date & time / Available slots</label>
+          {availableSlots && availableSlots.length > 0 ? (
+            <select id="datetime" value={datetime} onChange={(e) => setDatetime(e.target.value)}>
+              <option value="">Select a timeslot</option>
+              {availableSlots.map((s) => (
+                // s may be a string (old format) or an object { datetime, place }
+                (() => {
+                  const dt = typeof s === 'string' ? s : s.datetime;
+                  const place = typeof s === 'string' ? '' : (s.place || '');
+                  return (
+                    <option key={dt} value={dt}>{`${new Date(dt).toLocaleString()}${place ? ' — ' + place : ''}`}</option>
+                  );
+                })()
+              ))}
+            </select>
+          ) : (
+            <input id="datetime" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
+          )}
 
           <label htmlFor="reason">Reason (optional)</label>
           <input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} />

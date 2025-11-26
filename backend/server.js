@@ -74,9 +74,21 @@ const demoUsers = [
   { id: 'user1', email: 'user1@localhost', name: 'Demo User', password: 'password123' },
 ];
 
+// Helper: extract user id from Authorization header for demo citizen tokens
+const userIdFromAuthHeader = (req) => {
+  let auth = (req.headers.authorization || '').trim();
+  if (!auth) return null;
+  if (auth.toLowerCase().startsWith('bearer ')) auth = auth.slice(7).trim();
+  // Expect tokens of the form: demo-token-<userId>
+  const m = auth.match(/^demo-token-(.+)$/);
+  if (m) return m[1];
+  return null;
+};
+
 // Admin create user (development/demo)
 app.post('/api/admin/create-user', (req, res) => {
   // Expect Authorization: Bearer demo-admin-token
+
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') {
     return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -103,6 +115,35 @@ app.get('/api/admin/users', (req, res) => {
   // return users without passwords
   const users = demoUsers.map((u) => ({ id: u.id, email: u.email, name: u.name }));
   return res.json({ ok: true, users });
+});
+
+// Admin: create a new doctor (admin menu / UI can POST here after login)
+app.post('/api/admin/doctors', (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  const { id: providedId, name, specialty } = req.body || {};
+  if (!name || !specialty) return res.status(400).json({ ok: false, message: 'Missing name or specialty' });
+
+  // if admin provided an id, validate it's not already used
+  if (providedId) {
+    const exists = doctors.find(d => d.id === providedId);
+    if (exists) return res.status(409).json({ ok: false, message: 'Doctor id already exists' });
+  }
+
+  const id = providedId || `doc${(Array.isArray(doctors) ? doctors.length : 0) + 1}`;
+  const newDoctor = { id, name, specialty, availability: [] };
+  doctors.push(newDoctor);
+  return res.json({ ok: true, message: 'Doctor created', doctor: newDoctor });
+});
+
+// Admin: list all doctors with full availability (for admin UI/menu)
+app.get('/api/admin/doctors', (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  // return full doctor objects (including availability) for admin UI
+  return res.json({ ok: true, doctors });
 });
 
 // Citizen register
@@ -135,27 +176,119 @@ app.post('/api/citizen/forgot', (req, res) => {
 });
 
 const doctors = [
-  { id: 'doc1', name: 'Dr. Alice Smith', specialty: 'General Practitioner' },
-  { id: 'doc2', name: 'Dr. Bob Jones', specialty: 'Cardiologist' },
-  { id: 'doc3', name: 'Dr. Carol Evans', specialty: 'Dermatologist' },
+  { id: 'doc1', name: 'Dr. Alice Smith', specialty: 'General Practitioner', availability: [] },
+  { id: 'doc2', name: 'Dr. Bob Jones', specialty: 'Cardiologist', availability: [] },
+  { id: 'doc3', name: 'Dr. Carol Evans', specialty: 'Dermatologist', availability: [] },
 ];
 
 const appointments = []; // { id, userId, doctorId, datetime, reason, status }
 
-// Public: list doctors
+// Public: list doctors (include available future slots) — only return doctors that have scheduled slots
 app.get('/api/doctors', (req, res) => {
-  res.json({ ok: true, doctors });
+  const now = Date.now();
+  const list = doctors.map((d) => {
+    const available = Array.isArray(d.availability)
+      ? d.availability
+          .filter(s => s && !s.booked && new Date(s.datetime).getTime() > now)
+          .map(s => ({ datetime: s.datetime, place: s.place || null }))
+      : [];
+    return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
+  })
+  // Only include doctors that have at least one available future slot
+  .filter(d => Array.isArray(d.availableSlots) && d.availableSlots.length > 0);
+
+  res.json({ ok: true, doctors: list });
 });
 
-// Helper to get user id from demo token: Authorization: Bearer demo-token-<userId>
-function userIdFromAuthHeader(req) {
+// Citizen: list doctors that admin scheduled (requires citizen auth)
+app.get('/api/citizen/doctors', (req, res) => {
+  const userId = userIdFromAuthHeader(req);
+  if (!userId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  const now = Date.now();
+  const list = doctors.map((d) => {
+    const available = Array.isArray(d.availability)
+      ? d.availability
+          .filter(s => s && !s.booked && new Date(s.datetime).getTime() > now)
+          .map(s => ({ datetime: s.datetime, place: s.place || null }))
+      : [];
+    return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
+  }).filter(d => Array.isArray(d.availableSlots) && d.availableSlots.length > 0);
+
+  return res.json({ ok: true, doctors: list });
+});
+
+// Admin: add availability slots for a doctor
+app.post('/api/admin/doctors/:id/availability', (req, res) => {
   const auth = (req.headers.authorization || '').trim();
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.slice(7);
-  // token format demo-token-user1
-  if (!token.startsWith('demo-token-')) return null;
-  return token.replace('demo-token-', '');
-}
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  const id = req.params.id;
+  const doctor = doctors.find(d => d.id === id);
+  if (!doctor) return res.status(404).json({ ok: false, message: 'Doctor not found' });
+
+  // Accept multiple formats: { slots: [...] } where each slot is string or { datetime, place }
+  // or single { datetime, place }
+  const { slots, datetime, place } = req.body || {};
+  let toAdd = [];
+  if (Array.isArray(slots)) {
+    toAdd = slots;
+  } else if (datetime) {
+    toAdd = [{ datetime, place }];
+  }
+
+  if (!toAdd || toAdd.length === 0) return res.status(400).json({ ok: false, message: 'No slots provided' });
+
+  // ensure availability array
+  if (!Array.isArray(doctor.availability)) doctor.availability = [];
+  const added = [];
+  const now = Date.now();
+  toAdd.forEach((entry) => {
+    try {
+      let dt = null;
+      let pl = null;
+      if (typeof entry === 'string') {
+        dt = entry;
+      } else if (entry && typeof entry === 'object') {
+        dt = entry.datetime;
+        pl = entry.place;
+      }
+      if (!dt) return; // skip invalid
+      const t = new Date(dt).getTime();
+      if (Number.isNaN(t)) return; // skip invalid
+      if (t <= now) return; // skip past
+      const exists = doctor.availability.find(s => s.datetime === dt);
+      if (!exists) {
+        const slot = { datetime: dt, place: pl || null, booked: false };
+        doctor.availability.push(slot);
+        added.push(slot);
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+  });
+
+  return res.json({ ok: true, message: 'Slots added', added, availability: doctor.availability });
+});
+
+// Admin: remove an availability slot (by datetime exact match)
+app.delete('/api/admin/doctors/:id/availability', (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  const id = req.params.id;
+  const doctor = doctors.find(d => d.id === id);
+  if (!doctor) return res.status(404).json({ ok: false, message: 'Doctor not found' });
+
+  const { datetime } = req.body || {};
+  if (!datetime) return res.status(400).json({ ok: false, message: 'datetime required' });
+  if (!Array.isArray(doctor.availability)) doctor.availability = [];
+
+  const idx = doctor.availability.findIndex(s => s.datetime === datetime);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Slot not found' });
+  const [removed] = doctor.availability.splice(idx, 1);
+  return res.json({ ok: true, message: 'Slot removed', removed, availability: doctor.availability });
+});
 
 // Create appointment (citizen must be authenticated with demo token)
 app.post('/api/citizen/appointments', (req, res) => {
@@ -168,8 +301,18 @@ app.post('/api/citizen/appointments', (req, res) => {
   const doctor = doctors.find((d) => d.id === doctorId);
   if (!doctor) return res.status(400).json({ ok: false, message: 'Doctor not found' });
 
+  // check availability: must find a matching slot that is not booked and in future
+  if (!Array.isArray(doctor.availability)) doctor.availability = [];
+  const slot = doctor.availability.find(s => s.datetime === datetime && !s.booked);
+  if (!slot) {
+    return res.status(409).json({ ok: false, message: 'Requested timeslot is not available' });
+  }
+
+  // mark slot as booked
+  slot.booked = true;
+
   const id = `appt${appointments.length + 1}`;
-  const appt = { id, userId, doctorId, datetime, reason: reason || '', status: 'requested' };
+  const appt = { id, userId, doctorId, datetime, place: slot.place || '', reason: reason || '', status: 'requested' };
   appointments.push(appt);
   return res.json({ ok: true, message: 'Appointment requested', appointment: appt });
 });
