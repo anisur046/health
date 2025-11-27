@@ -127,6 +127,22 @@ export default function CitizenForm() {
     setDatetime('');
   }, [doctorId, doctors]);
 
+  // Build a safe href to an attachment. Ensure URLs are absolute when possible and always start with a '/'
+  const getAttachmentHref = (att) => {
+    if (!att || !att.url) return '#';
+    const url = att.url;
+    // if already absolute, return it
+    if (/^https?:\/\//i.test(url)) return url;
+    // ensure leading slash so the path isn't treated as relative to the current route
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    // if API_BASE is an absolute URL (configured via REACT_APP_API_BASE), use that as origin
+    if (API_BASE && API_BASE.startsWith('http')) return `${backendBase}${normalized}`;
+    // during development the CRA dev server proxy (package.json "proxy") will forward /uploads requests
+    // so returning a root-relative URL (normalized) will work. In production you should set REACT_APP_API_BASE
+    // to the backend URL so attachments are served from the correct host.
+    return normalized;
+  };
+
   if (!token) {
     return (
       <div className="page-with-bg page-with-bg--appointment">
@@ -220,7 +236,7 @@ export default function CitizenForm() {
                           {a.attachments.map((att, idx) => (
                             <div key={idx} style={{ marginBottom: 6 }}>
                               <a
-                                href={(att.url && (att.url.startsWith('http') ? att.url : `${backendBase}${att.url}`)) || '#'}
+                                href={getAttachmentHref(att)}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{ marginRight: 8 }}
