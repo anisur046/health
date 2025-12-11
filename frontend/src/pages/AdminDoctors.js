@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../Footer';
 
 const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:3001/api';
 
@@ -249,6 +250,7 @@ export default function AdminDoctors() {
                     </table>
                 )}
             </div>
+            <Footer />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Footer from '../Footer';
 
 export default function Citizen() {
   // Use explicit REACT_APP_API_BASE when provided. In development default to 127.0.0.1:3001
@@ -261,6 +262,7 @@ export default function Citizen() {
 
         <p className="form-help">Registered users can sign in and manage appointments. Demo accounts are stored in the local backend for development.</p>
       </div>
+      <Footer />
     </div>
   );
 }

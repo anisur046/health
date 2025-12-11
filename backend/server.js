@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -180,10 +181,40 @@ app.post('/api/citizen/login', async (req, res) => {
 });
 
 // Citizen forgot password
-app.post('/api/citizen/forgot', (req, res) => {
+app.post('/api/citizen/forgot', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ ok: false, message: 'Missing email' });
-  return res.json({ ok: true, message: 'If an account exists, email sent.' });
+
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (rows.length === 0) {
+      // For security, we usually don't reveal if user exists, but for dev we might want to know.
+      // We'll mimic success to avoid enumeration, or return 404 if user prefers dev feedback.
+      // Let's return success but log that user was not found.
+      console.log(`[Forgot Password] Request for ${email} - User not found.`);
+      return res.json({ ok: true, message: 'If an account exists, email sent.' });
+    }
+
+    const user = rows[0];
+    // In a real app, generate a token, save hash to DB.
+    // For this demo:
+    console.log(`
+      ======================================================
+      [MOCK EMAIL SERVICE]
+      To: ${email}
+      Subject: Password Reset Request
+      
+      Hello ${user.name},
+      You requested a password reset. 
+      Click here to reset: http://localhost:3000/reset-password?token=mock-token-for-${user.id}
+      ======================================================
+    `);
+
+    return res.json({ ok: true, message: 'If an account exists, email sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
 // Admin forgot password
@@ -473,6 +504,23 @@ app.delete('/api/admin/appointments/:id/attachments/:filename', async (req, res)
       if (err) console.error('Error deleting file:', err);
     });
     return res.json({ ok: true, message: 'Deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+
+// Contact Us endpoint
+app.post('/api/contact', async (req, res) => {
+  const { name, email, message } = req.body || {};
+  if (!name || !email || !message) {
+    return res.status(400).json({ ok: false, message: 'Missing fields' });
+  }
+
+  try {
+    await db.query('INSERT INTO messages (name, email, message) VALUES (?, ?, ?)', [name, email, message]);
+    return res.json({ ok: true, message: 'Message sent successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: 'Database error' });

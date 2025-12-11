@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Footer from '../Footer';
 
 export default function Home() {
   const images = [
@@ -66,63 +67,66 @@ export default function Home() {
   const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
 
   return (
-    <section className="home-hero">
-      {/* Background slideshow layers */}
-      <div className="hero-bg" aria-hidden="true">
-        {backgrounds.map((src, i) => (
-          <div
-            key={i}
-            className={i === bgIndex ? 'bg-layer active' : 'bg-layer'}
-            style={{ backgroundImage: `url('${src}')` }}
-          />
-        ))}
-        {/* subtle overlay to keep text readable */}
-        <div className="hero-bg-overlay" />
-      </div>
-
-      <div className="hero-left">
-        <h2>Welcome to Health App</h2>
-        <p>
-          Find physicians, manage appointments, and access trusted medical information. Our
-          platform connects citizens with healthcare resources and professionals.
-        </p>
-        <div style={{ marginTop: 12 }}>
-          <Link className="cta" to="/citizen">Get Started</Link>
-        </div>
-      </div>
-
-      <div
-        className="hero-right"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        aria-hidden="false"
-      >
-        <div className="carousel" style={{ transform: `translateX(-${index * 100}%)` }}>
-          {images.map((item, i) => (
-            <div className="slide" key={i} aria-hidden={i !== index}>
-              <img src={item.src} alt={item.alt} loading="lazy" />
-            </div>
-          ))}
-        </div>
-
-        <div className="carousel-nav">
-          <button className="nav-btn prev" onClick={prev} aria-label="Previous slide">‹</button>
-          <button className="nav-btn next" onClick={next} aria-label="Next slide">›</button>
-        </div>
-
-        <div className="carousel-dots">
-          {images.map((_, i) => (
-            <button
+    <>
+      <section className="home-hero">
+        {/* Background slideshow layers */}
+        <div className="hero-bg" aria-hidden="true">
+          {backgrounds.map((src, i) => (
+            <div
               key={i}
-              className={i === index ? 'dot active' : 'dot'}
-              onClick={() => setIndex(i)}
-              aria-label={`Go to slide ${i + 1}`}
+              className={i === bgIndex ? 'bg-layer active' : 'bg-layer'}
+              style={{ backgroundImage: `url('${src}')` }}
             />
           ))}
+          {/* subtle overlay to keep text readable */}
+          <div className="hero-bg-overlay" />
         </div>
 
-        <div className="sr-only" aria-live="polite">{images[index].alt}</div>
-      </div>
-    </section>
+        <div className="hero-left">
+          <h2>Welcome to Health App</h2>
+          <p>
+            Find physicians, manage appointments, and access trusted medical information. Our
+            platform connects citizens with healthcare resources and professionals.
+          </p>
+          <div style={{ marginTop: 12 }}>
+            <Link className="cta" to="/citizen">Get Started</Link>
+          </div>
+        </div>
+
+        <div
+          className="hero-right"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          aria-hidden="false"
+        >
+          <div className="carousel" style={{ transform: `translateX(-${index * 100}%)` }}>
+            {images.map((item, i) => (
+              <div className="slide" key={i} aria-hidden={i !== index}>
+                <img src={item.src} alt={item.alt} loading="lazy" />
+              </div>
+            ))}
+          </div>
+
+          <div className="carousel-nav">
+            <button className="nav-btn prev" onClick={prev} aria-label="Previous slide">‹</button>
+            <button className="nav-btn next" onClick={next} aria-label="Next slide">›</button>
+          </div>
+
+          <div className="carousel-dots">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                className={i === index ? 'dot active' : 'dot'}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          <div className="sr-only" aria-live="polite">{images[index].alt}</div>
+        </div>
+      </section>
+      <Footer />
+    </>
   );
 }

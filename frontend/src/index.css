@@ -1,25 +1,33 @@
 /* filepath: c:\Users\AnisurSk\WebstormProjects\health\frontend\src\index.css */
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
   background: #f6f8fa;
   color: #111;
 }
+
 button {
   padding: 8px 12px;
   font-size: 14px;
 }
+
 pre {
   background: #fff;
   padding: 12px;
   border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* App root and page container - ensures pages are responsive and have background */
+/* App root and page container - ensures pages are full screen */
 .app-root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   background: linear-gradient(180deg, #f6f8fa 0%, #eef4fb 100%);
   padding: 18px;
@@ -27,49 +35,110 @@ pre {
 }
 
 .page-container {
+  flex: 1;
   max-width: 1100px;
   margin: 0 auto;
   padding: 16px;
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Navbar styles */
+/* Navbar styles - Enhanced Responsive */
 .app-nav {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 16px;
+  z-index: 100;
 }
 
 .nav-link {
   text-decoration: none;
   color: #0366d6;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background 150ms ease, color 150ms ease;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: all 250ms ease;
   font-weight: 500;
+  font-size: 14px;
+  position: relative;
+  white-space: nowrap;
+  min-height: 44px;
+  /* Touch-friendly */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Light hover effect */
 .nav-link:hover {
-  background: rgba(3, 102, 214, 0.08);
+  background: linear-gradient(135deg, rgba(3, 102, 214, 0.08) 0%, rgba(11, 121, 208, 0.12) 100%);
+  color: #0256c0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(3, 102, 214, 0.15);
 }
 
 .nav-link.active {
-  background: #0366d6;
+  background: linear-gradient(135deg, #0366d6 0%, #0b79d0 100%);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(3, 102, 214, 0.3);
 }
 
-/* Responsive: stack nav on small screens */
+.nav-link.active:hover {
+  background: linear-gradient(135deg, #0256c0 0%, #0a6ec0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(3, 102, 214, 0.4);
+}
+
+/* Tablet responsive */
+@media (max-width: 768px) {
+  .app-nav {
+    gap: 6px;
+    padding: 10px 12px;
+    top: 12px;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile responsive: stack nav on small screens */
 @media (max-width: 600px) {
   .app-nav {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 4px;
+    padding: 12px;
+    position: static;
+    border-radius: 10px;
   }
+
   .nav-link {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 16px;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .nav-link:hover {
+    transform: translateX(4px);
+  }
+
+  .nav-link.active:hover {
+    transform: translateX(4px);
   }
 }
+
 
 /* Home hero and carousel */
 .home-hero {
@@ -81,17 +150,19 @@ pre {
   padding: 32px;
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(20, 40, 60, 0.06);
-  overflow: hidden; /* contain absolutely positioned backgrounds */
+  overflow: hidden;
+  /* contain absolutely positioned backgrounds */
   /* make home hero occupy available viewport height (subtract nav + margins). Adjust if your navbar height differs */
   min-height: calc(100vh - 72px);
   height: calc(100vh - 72px);
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(247,251,255,0.5) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(247, 251, 255, 0.5) 100%);
 }
 
 /* Background slideshow container (absolutely positioned layers) */
 .hero-bg {
   position: absolute;
-  inset: 0; /* top:0; right:0; bottom:0; left:0 */
+  inset: 0;
+  /* top:0; right:0; bottom:0; left:0 */
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -118,7 +189,7 @@ pre {
 .hero-bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.35) 60%, rgba(255,255,255,0.6) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 60%, rgba(255, 255, 255, 0.6) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -148,12 +219,30 @@ pre {
 
 .cta {
   display: inline-block;
-  background: #0b79d0;
+  background: linear-gradient(135deg, #0b79d0 0%, #0366d6 100%);
   color: #fff;
   padding: 10px 16px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
+  transition: all 250ms ease;
+  box-shadow: 0 2px 8px rgba(11, 121, 208, 0.25);
+  min-height: 44px;
+  /* Touch-friendly minimum height */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta:hover {
+  background: linear-gradient(135deg, #0a6ec0 0%, #0256c0 100%);
+  box-shadow: 0 4px 12px rgba(11, 121, 208, 0.35);
+  transform: translateY(-1px);
+}
+
+.cta:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(11, 121, 208, 0.3);
 }
 
 .hero-right {
@@ -163,7 +252,8 @@ pre {
   position: relative;
   overflow: hidden;
   border-radius: 10px;
-  background: rgba(255,255,255,0.92); /* slightly translucent to let bg hint through */
+  background: rgba(255, 255, 255, 0.92);
+  /* slightly translucent to let bg hint through */
 }
 
 .carousel {
@@ -209,7 +299,7 @@ pre {
 
 .dot.active {
   background: #0366d6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 /* Carousel navigation buttons */
@@ -222,7 +312,8 @@ pre {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  pointer-events: none; /* allow clicks through empty space */
+  pointer-events: none;
+  /* allow clicks through empty space */
   z-index: 5;
 }
 
@@ -246,7 +337,7 @@ pre {
 }
 
 .nav-btn:focus {
-  outline: 2px solid rgba(3,102,214,0.35);
+  outline: 2px solid rgba(3, 102, 214, 0.35);
 }
 
 /* visually hidden text for screen readers */
@@ -270,6 +361,7 @@ pre {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(15, 30, 45, 0.06);
+  min-height: calc(100vh - 200px);
 }
 
 .admin-form label {
@@ -357,7 +449,7 @@ pre {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   z-index: 1000;
 }
 
@@ -367,7 +459,7 @@ pre {
   border-radius: 10px;
   width: 380px;
   max-width: calc(100% - 32px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 /* Citizen page styles */
@@ -378,6 +470,7 @@ pre {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(10, 20, 30, 0.06);
+  min-height: calc(100vh - 200px);
 }
 
 .mode-toggle {
@@ -411,6 +504,7 @@ pre {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(15, 30, 45, 0.06);
+  min-height: calc(100vh - 200px);
 }
 
 .reports-summary {
@@ -447,7 +541,8 @@ pre {
 .reports-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 520px; /* allow horizontal scroll on narrow viewports */
+  min-width: 520px;
+  /* allow horizontal scroll on narrow viewports */
 }
 
 .reports-table th,
@@ -470,9 +565,10 @@ pre {
 .page-with-bg {
   position: relative;
   overflow: hidden;
-  border-radius: 10px; /* match page card corners */
+  border-radius: 10px;
+  /* match page card corners */
   /* fallback gradient if images are missing */
-  background: linear-gradient(180deg, rgba(250,251,252,0.9) 0%, rgba(243,247,250,0.85) 100%);
+  background: linear-gradient(180deg, rgba(250, 251, 252, 0.9) 0%, rgba(243, 247, 250, 0.85) 100%);
 }
 
 /* The actual background layer (keeps markup unchanged) */
@@ -496,36 +592,37 @@ pre {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.55) 40%, rgba(255,255,255,0.65) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.55) 40%, rgba(255, 255, 255, 0.65) 100%);
   pointer-events: none;
 }
 
 /* Ensure page content sits above the decorative layers */
-.page-with-bg > * {
+.page-with-bg>* {
   position: relative;
   z-index: 2;
 }
 
 /* Per-page modifiers — change the URL to use your own images placed under public/backgrounds/ */
 /* If you add images, uncomment the matching background-image line or set the --page-bg-... CSS variable. */
-.page-with-bg--admin::before{
+.page-with-bg--admin::before {
   /* layered, colorful bubbles for the Admin page background */
   background-image:
-    radial-gradient(circle at 20% 25%, rgba(255,165,0,0.18) 0%, rgba(255,165,0,0.10) 28%, transparent 56%),
-    radial-gradient(circle at 80% 70%, rgba(0,200,150,0.14) 0%, rgba(0,200,150,0.07) 30%, transparent 58%),
-    radial-gradient(circle at 50% 10%, rgba(139,92,246,0.10) 0%, rgba(139,92,246,0.05) 28%, transparent 55%);
+    radial-gradient(circle at 20% 25%, rgba(255, 165, 0, 0.18) 0%, rgba(255, 165, 0, 0.10) 28%, transparent 56%),
+    radial-gradient(circle at 80% 70%, rgba(0, 200, 150, 0.14) 0%, rgba(0, 200, 150, 0.07) 30%, transparent 58%),
+    radial-gradient(circle at 50% 10%, rgba(139, 92, 246, 0.10) 0%, rgba(139, 92, 246, 0.05) 28%, transparent 55%);
   background-size: 260px 260px, 200px 200px, 300px 300px;
   background-position: 20% 25%, 80% 70%, 50% 10%;
   background-repeat: no-repeat, no-repeat, no-repeat;
   /* slow floating animation for subtle motion */
   animation: adminBubbles 20s ease-in-out infinite;
 }
-.page-with-bg--reports::before{
+
+.page-with-bg--reports::before {
   /* layered backgrounds: animated translucent bubbles above the main SVG background */
   background-image:
-    radial-gradient(circle at 12% 18%, rgba(11,121,208,0.20) 0%, rgba(11,121,208,0.12) 25%, rgba(11,121,208,0.06) 45%, transparent 60%),
-    radial-gradient(circle at 82% 22%, rgba(139,92,246,0.14) 0%, rgba(139,92,246,0.08) 30%, transparent 55%),
-    radial-gradient(circle at 60% 72%, rgba(3,102,214,0.12) 0%, rgba(3,102,214,0.06) 28%, transparent 55%),
+    radial-gradient(circle at 12% 18%, rgba(11, 121, 208, 0.20) 0%, rgba(11, 121, 208, 0.12) 25%, rgba(11, 121, 208, 0.06) 45%, transparent 60%),
+    radial-gradient(circle at 82% 22%, rgba(139, 92, 246, 0.14) 0%, rgba(139, 92, 246, 0.08) 30%, transparent 55%),
+    radial-gradient(circle at 60% 72%, rgba(3, 102, 214, 0.12) 0%, rgba(3, 102, 214, 0.06) 28%, transparent 55%),
     url('./backgrounds/reports.svg');
   background-size: 220px 220px, 300px 300px, 180px 180px, cover;
   background-position: 12% 18%, 82% 22%, 60% 72%, center center;
@@ -533,10 +630,26 @@ pre {
   /* gentle floating animation for the bubble layers */
   animation: reportsBubbles 14s ease-in-out infinite;
 }
-.page-with-bg--citizen::before{ /* background-image: url('/backgrounds/citizen.jpg'); */ background-image: none; }
-.page-with-bg--appointment::before{ /* background-image: url('/backgrounds/appointment.jpg'); */ background-image: none; }
-.page-with-bg--contact::before{ /* background-image: url('/backgrounds/contact.jpg'); */ background-image: none; }
-.page-with-bg--about::before  { /* background-image: url('/backgrounds/about.jpg');   */ background-image: none; }
+
+.page-with-bg--citizen::before {
+  /* background-image: url('/backgrounds/citizen.jpg'); */
+  background-image: none;
+}
+
+.page-with-bg--appointment::before {
+  /* background-image: url('/backgrounds/appointment.jpg'); */
+  background-image: none;
+}
+
+.page-with-bg--contact::before {
+  /* background-image: url('/backgrounds/contact.jpg'); */
+  background-image: none;
+}
+
+.page-with-bg--about::before {
+  /* background-image: url('/backgrounds/about.jpg');   */
+  background-image: none;
+}
 
 /* If you'd like to enable images later: place files in frontend/public/backgrounds/ (admin.jpg, reports.jpg, citizen.jpg, appointment.jpg, contact.jpg, about.jpg)
    then either uncomment the background-image lines above or add rules like:
@@ -545,15 +658,37 @@ pre {
 
 /* Responsive tweaks: reduce parallax/scale on small screens for performance and readability */
 @media (max-width: 768px) {
-  .page-with-bg::before { transform: scale(1); background-position: center top; }
-  .page-with-bg::after { background: linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.65) 40%, rgba(255,255,255,0.75) 100%); }
-  .page-with-bg { border-radius: 8px; padding: 12px; }
-  .home-hero { min-height: calc(100vh - 64px); height: calc(100vh - 64px); padding: 20px; }
+  .page-with-bg::before {
+    transform: scale(1);
+    background-position: center top;
+  }
+
+  .page-with-bg::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.65) 40%, rgba(255, 255, 255, 0.75) 100%);
+  }
+
+  .page-with-bg {
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .home-hero {
+    min-height: calc(100vh - 64px);
+    height: calc(100vh - 64px);
+    padding: 20px;
+  }
 }
 
 @media (max-width: 420px) {
-  .page-with-bg::before { background-position: center 20%; }
-  .home-hero { min-height: calc(100vh - 56px); height: calc(100vh - 56px); padding: 16px; }
+  .page-with-bg::before {
+    background-position: center 20%;
+  }
+
+  .home-hero {
+    min-height: calc(100vh - 56px);
+    height: calc(100vh - 56px);
+    padding: 16px;
+  }
 }
 
 /* Responsive adjustments */
@@ -562,16 +697,33 @@ pre {
     flex-direction: column-reverse;
     padding: 20px;
     background-position: center top;
+    gap: 16px;
   }
+
+  .hero-left {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .hero-left h2 {
+    font-size: 26px;
+  }
+
+  .hero-left p {
+    font-size: 15px;
+  }
+
   .hero-right {
     width: 100%;
     max-width: 100%;
     min-width: 0;
     margin-bottom: 8px;
   }
+
   .slide {
-    height: 200px;
+    height: 220px;
   }
+
   .carousel-dots {
     position: static;
     flex-direction: row;
@@ -579,15 +731,189 @@ pre {
     gap: 6px;
     margin-top: 8px;
   }
-  .reports-container { padding: 16px; margin: 16px; }
-  .reports-grid { flex-direction: column; }
-  .reports-table { min-width: 100%; }
-  .reports-table th, .reports-table td { white-space: normal; padding: 8px; }
+
+  .reports-container {
+    padding: 16px;
+    margin: 16px;
+  }
+
+  .reports-grid {
+    flex-direction: column;
+  }
+
+  .reports-table {
+    min-width: 100%;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    white-space: normal;
+    padding: 8px;
+  }
 }
 
+/* Tablet adjustments */
+@media (max-width: 768px) {
+  .hero-left h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .hero-left p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .cta {
+    padding: 12px 20px;
+    font-size: 15px;
+    display: block;
+    text-align: center;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .slide {
+    height: 200px;
+  }
+
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Mobile adjustments */
 @media (max-width: 480px) {
-  .reports-actions { flex-direction: column; align-items: stretch; }
-  .btn-primary { width: 100%; }
+  .home-hero {
+    padding: 16px 12px;
+    gap: 12px;
+    min-height: auto;
+    height: auto;
+  }
+
+  .hero-left h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .hero-left p {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .cta {
+    padding: 14px 24px;
+    font-size: 16px;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 10px;
+  }
+
+  .hero-right {
+    border-radius: 8px;
+  }
+
+  .slide {
+    height: 180px;
+  }
+
+  .carousel-nav {
+    left: 4px;
+    right: 4px;
+  }
+
+  .nav-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .carousel-dots {
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .reports-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 360px) {
+  .home-hero {
+    padding: 12px 8px;
+  }
+
+  .hero-left h2 {
+    font-size: 20px;
+  }
+
+  .hero-left p {
+    font-size: 13px;
+  }
+
+  .cta {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+
+  .slide {
+    height: 160px;
+  }
+
+  .nav-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 900px) and (orientation: landscape) {
+  .home-hero {
+    flex-direction: row;
+    min-height: auto;
+    height: auto;
+    padding: 16px;
+  }
+
+  .hero-left {
+    text-align: left;
+    flex: 1 1 50%;
+  }
+
+  .hero-right {
+    flex: 1 1 50%;
+    max-width: 50%;
+  }
+
+  .slide {
+    height: 200px;
+  }
+
+  .cta {
+    display: inline-block;
+    width: auto;
+    max-width: none;
+  }
 }
 
 /* Contact and About small card variants */
@@ -599,13 +925,17 @@ pre {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(10, 20, 30, 0.06);
+  min-height: calc(100vh - 200px);
 }
 
 /* Contact page: underwater video + moving bubbles */
 .page-with-bg--contact {
   position: relative;
 }
-.page-with-bg--contact::before { background-image: none; }
+
+.page-with-bg--contact::before {
+  background-image: none;
+}
 
 .page-with-bg--contact .bg-video {
   position: absolute;
@@ -616,7 +946,10 @@ pre {
   z-index: 0;
   pointer-events: none;
 }
-.page-with-bg--contact .bg-fallback { display: none; }
+
+.page-with-bg--contact .bg-fallback {
+  display: none;
+}
 
 .water-bubbles {
   position: absolute;
@@ -630,9 +963,9 @@ pre {
   position: absolute;
   bottom: -12%;
   border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.18);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15) inset;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) inset;
   will-change: transform, left, top;
   /* default duration variable so linters/builders can resolve --dur */
   --dur: 12s;
@@ -644,28 +977,57 @@ pre {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.14) 18%, rgba(255,255,255,0.06) 40%, transparent 60%);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.14) 18%, rgba(255, 255, 255, 0.06) 40%, transparent 60%);
   transform-origin: 50% 50%;
   animation: bubbleSway calc(var(--dur, 12s) / 3) ease-in-out infinite alternate, bubblePulse 3s ease-in-out infinite;
 }
 
 @keyframes bubbleRise {
-  0% { transform: translateY(0) scale(0.9); opacity: 0; }
-  8% { opacity: 0.9; }
-  60% { opacity: 0.9; }
-  100% { transform: translateY(-130vh) scale(1.06); opacity: 0.2; }
+  0% {
+    transform: translateY(0) scale(0.9);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 0.9;
+  }
+
+  60% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateY(-130vh) scale(1.06);
+    opacity: 0.2;
+  }
 }
 
 @keyframes bubbleSway {
-  0% { transform: translateX(0) rotate(0deg); }
-  50% { transform: translateX(18px) rotate(6deg); }
-  100% { transform: translateX(0) rotate(-2deg); }
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateX(18px) rotate(6deg);
+  }
+
+  100% {
+    transform: translateX(0) rotate(-2deg);
+  }
 }
 
 @keyframes bubblePulse {
-  0% { transform: scale(0.98); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(0.98); }
+  0% {
+    transform: scale(0.98);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(0.98);
+  }
 }
 
 /* Make the contact overlay cooler and darker for underwater look */
@@ -674,24 +1036,41 @@ pre {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(180deg, rgba(0,18,40,0.38) 0%, rgba(0,18,40,0.28) 40%, rgba(0,18,40,0.36) 100%);
+  background: linear-gradient(180deg, rgba(0, 18, 40, 0.38) 0%, rgba(0, 18, 40, 0.28) 40%, rgba(0, 18, 40, 0.36) 100%);
   pointer-events: none;
 }
 
 /* Ensure contact content sits above video+bubbles */
-.page-with-bg--contact > * { position: relative; z-index: 3; }
+.page-with-bg--contact>* {
+  position: relative;
+  z-index: 3;
+}
 
 /* responsive tweaks: hide video on small devices and keep bubbles */
 @media (max-width: 640px) {
-  .page-with-bg--contact .bg-video { display: none; }
-  .page-with-bg--contact .bg-fallback { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .page-with-bg--contact .bg-video {
+    display: none;
+  }
+
+  .page-with-bg--contact .bg-fallback {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
 }
 
 /* About page: reuse underwater video + bubbles styles from Contact page */
 .page-with-bg--about {
   position: relative;
 }
-.page-with-bg--about::before { background-image: none; }
+
+.page-with-bg--about::before {
+  background-image: none;
+}
 
 .page-with-bg--about .bg-video {
   position: absolute;
@@ -702,7 +1081,10 @@ pre {
   z-index: 0;
   pointer-events: none;
 }
-.page-with-bg--about .bg-fallback { display: none; }
+
+.page-with-bg--about .bg-fallback {
+  display: none;
+}
 
 /* Make the about overlay slightly warmer than contact for visual variety */
 .page-with-bg--about::after {
@@ -710,15 +1092,29 @@ pre {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(180deg, rgba(3,18,30,0.34) 0%, rgba(3,18,30,0.22) 40%, rgba(3,18,30,0.34) 100%);
+  background: linear-gradient(180deg, rgba(3, 18, 30, 0.34) 0%, rgba(3, 18, 30, 0.22) 40%, rgba(3, 18, 30, 0.34) 100%);
   pointer-events: none;
 }
 
-.page-with-bg--about > * { position: relative; z-index: 3; }
+.page-with-bg--about>* {
+  position: relative;
+  z-index: 3;
+}
 
 @media (max-width: 640px) {
-  .page-with-bg--about .bg-video { display: none; }
-  .page-with-bg--about .bg-fallback { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .page-with-bg--about .bg-video {
+    display: none;
+  }
+
+  .page-with-bg--about .bg-fallback {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
 }
 
 @keyframes reportsBubbles {
@@ -726,14 +1122,17 @@ pre {
     background-position: 12% 18%, 82% 22%, 60% 72%, center center;
     opacity: 1;
   }
+
   45% {
     background-position: 16% 14%, 86% 18%, 56% 68%, center center;
     opacity: 0.95;
   }
+
   70% {
     background-position: 10% 22%, 78% 26%, 64% 76%, center center;
     opacity: 1;
   }
+
   100% {
     background-position: 12% 18%, 82% 22%, 60% 72%, center center;
     opacity: 1;
@@ -746,19 +1145,168 @@ pre {
     opacity: 1;
     transform: scale(1);
   }
+
   40% {
     background-position: 16% 20%, 84% 66%, 54% 14%;
     opacity: 0.95;
     transform: scale(1.01);
   }
+
   70% {
     background-position: 22% 30%, 76% 74%, 46% 8%;
     opacity: 1;
     transform: scale(0.995);
   }
+
   100% {
     background-position: 20% 25%, 80% 70%, 50% 10%;
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* Global Water Background */
+.water-bubbles-global {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #eef4fb 0%, #dce9f5 100%);
+  /* soft water gradient base */
+}
+
+/* Ensure content sits above the global background */
+.app-nav,
+.page-container,
+.home-hero {
+  position: relative;
+  z-index: 2;
+}
+
+/* Override app-root background to be transparent so the fixed background shows through */
+.app-root {
+  background: transparent;
+}
+
+/* Footer Styles - Responsive */
+.app-footer {
+  background: linear-gradient(135deg, #0b3954 0%, #087ca7 100%);
+  color: #fff;
+  padding: 40px 20px 20px;
+  margin-top: 60px;
+  position: relative;
+  z-index: 10;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -4px 20px rgba(11, 57, 84, 0.15);
+}
+
+.footer-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.footer-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-section p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.footer-section a {
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding: 6px 0;
+  font-size: 14px;
+  transition: color 200ms ease, padding-left 200ms ease;
+}
+
+.footer-section a:hover {
+  color: #fff;
+  padding-left: 8px;
+}
+
+.footer-bottom {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 20px;
+  text-align: center;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+}
+
+/* Responsive Footer Styles */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 32px 16px 16px;
+    margin-top: 40px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-bottom: 20px;
+  }
+
+  .footer-section {
+    text-align: center;
+  }
+
+  .footer-section a:hover {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-footer {
+    padding: 24px 12px 12px;
+    margin-top: 32px;
+  }
+
+  .footer-content {
+    gap: 20px;
+  }
+
+  .footer-section h3 {
+    font-size: 18px;
+  }
+
+  .footer-section h4 {
+    font-size: 14px;
+  }
+
+  .footer-section p,
+  .footer-section a {
+    font-size: 13px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
   }
 }

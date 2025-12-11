@@ -1,45 +1,118 @@
-import React, { useMemo } from 'react';
-import underwaterVideo from '../backgrounds/underwater.mp4';
-import underwaterSVG from '../backgrounds/underwater.svg';
+import React, { useState } from 'react';
+import Footer from '../Footer';
 
 export default function ContactUs() {
-  // generate deterministic bubble specs for rendering
-  const bubbles = useMemo(() => [
-    { left: 8, size: 36, delay: 0, duration: 10 },
-    { left: 22, size: 56, delay: 2, duration: 14 },
-    { left: 38, size: 28, delay: 1.2, duration: 9 },
-    { left: 52, size: 72, delay: 3.5, duration: 16 },
-    { left: 66, size: 40, delay: 0.6, duration: 11 },
-    { left: 80, size: 52, delay: 2.8, duration: 13 },
-    { left: 92, size: 30, delay: 1.6, duration: 12 }
-  ], []);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState({ type: '', msg: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus({ type: '', msg: '' });
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus({ type: 'success', msg: data.message });
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        setStatus({ type: 'error', msg: data.message || 'Error sending message' });
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', msg: 'Failed to connect to server' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="page-with-bg page-with-bg--contact" style={{ position: 'relative', minHeight: '100vh' }}>
-      {/* Background video (place public/backgrounds/underwater.mp4 to use) */}
-      <video className="bg-video" autoPlay muted loop playsInline preload="auto">
-        <source src={underwaterVideo} type="video/mp4" />
-        {/* fallback image if video not available */}
-        <img className="bg-fallback" src={underwaterSVG} alt="Underwater background" aria-hidden="true" />
-      </video>
+    <div className="contact-container">
+      <h2>Contact Us</h2>
+      <p style={{ marginBottom: '20px', color: '#586069' }}>
+        Have questions? Fill out the form below and we'll obtain back to you shortly.
+      </p>
 
-      {/* decorative moving bubbles rendered as absolute elements */}
-      <div className="water-bubbles" aria-hidden={true}>
-        {bubbles.map((b, i) => (
-          <div
-            key={i}
-            className="water-bubble"
-            style={{ left: `${b.left}%`, width: b.size, height: b.size, animationDelay: `${b.delay}s`, ['--dur']: `${b.duration}s` }}
-          >
-            <div className="bubble-core" />
-          </div>
-        ))}
-      </div>
+      {status.msg && (
+        <div className={status.type === 'error' ? 'error' : 'notice'}>
+          {status.msg}
+        </div>
+      )}
 
-      <div className="contact-container">
-        <h2>Contact Us</h2>
-        <p>For inquiries, email: support@healthapp.example or call: (555) 123-4567</p>
+      <form onSubmit={handleSubmit} className="admin-form">
+        <div className="form-group">
+          <label htmlFor="name">Name</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            placeholder="Your Name"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            placeholder="your@email.com"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="message">Message</label>
+          <textarea
+            id="message"
+            name="message"
+            rows="5"
+            value={formData.message}
+            onChange={handleChange}
+            required
+            placeholder="How can we help you?"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              marginTop: '6px',
+              border: '1px solid #e1e6ec',
+              borderRadius: '8px',
+              fontSize: '14px',
+              color: '#0b3954',
+              fontFamily: 'inherit'
+            }}
+          />
+        </div>
+
+        <div style={{ marginTop: '20px' }}>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Sending...' : 'Send Message'}
+          </button>
+        </div>
+      </form>
+
+      <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+        <h3>Other Ways to Reach Us</h3>
+        <p>Email: <strong>support@healthapp.example</strong></p>
+        <p>Phone: <strong>(555) 123-4567</strong></p>
+        <p>Address: 123 Health St, Wellness City, HC 90210</p>
       </div>
+      <Footer />
     </div>
   );
 }

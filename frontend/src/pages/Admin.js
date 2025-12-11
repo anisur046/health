@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Footer from '../Footer';
 
 // Prefer REACT_APP_API_BASE when provided. In development default to 127.0.0.1:3001
 // to avoid proxy/misrouting issues (restart CRA after changing package.json/.env).
@@ -365,6 +366,7 @@ export default function Admin() {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     );
 }

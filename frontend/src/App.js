@@ -10,6 +10,8 @@ import CitizenForm from './pages/CitizenForm';
 import ContactUs from './pages/ContactUs';
 import About from './pages/About';
 
+import WaterBackground from './WaterBackground';
+
 export default function App() {
   // track admin authentication so navbar can show Reports after admin login
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!localStorage.getItem('adminToken'));
@@ -34,6 +36,7 @@ export default function App() {
 
   return (
     <div className="app-root">
+      <WaterBackground />
       <nav className="app-nav" style={{ marginBottom: 16 }}>
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           Home
