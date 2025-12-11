@@ -47,7 +47,7 @@ export default function CitizenForm() {
       const list = data.doctors || [];
       setDoctors(list);
       // if a doctor is already selected, update slots
-      const sel = list.find(d => d.id === doctorId);
+      const sel = list.find(d => String(d.id) === String(doctorId));
       setAvailableSlots(sel ? (sel.availableSlots || []) : []);
     } catch (err) {
       setError(err.message || 'Unable to load doctors');
@@ -121,7 +121,7 @@ export default function CitizenForm() {
 
   // When doctor selection changes, update available slots
   useEffect(() => {
-    const d = doctors.find(x => x.id === doctorId);
+    const d = doctors.find(x => String(x.id) === String(doctorId));
     setAvailableSlots(d ? (d.availableSlots || []) : []);
     // reset datetime when doctor changes
     setDatetime('');

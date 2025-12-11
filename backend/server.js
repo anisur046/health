@@ -3,6 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const db = require('./db-mysql'); // MySQL Connection Pool
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -14,81 +15,62 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // serve uploaded files
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-app.use(cors());
+// CORS Configuration
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Simple request logger to help debug incoming requests
+// Request logger
 app.use((req, res, next) => {
-  console.log(new Date().toISOString(), req.method, req.url);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ status: 'ok', database: 'MySQL', time: new Date().toISOString() });
 });
 
 app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello from backend' });
-});
-
-app.post('/api/echo', (req, res) => {
-  res.json({ received: req.body });
+  res.json({ message: 'Hello from backend (MySQL)' });
 });
 
 // Demo in-memory admin account (FOR DEVELOPMENT ONLY)
 const demoAdmin = {
   id: 'admin',
   email: 'admin@localhost',
-  password: 'admin123', // DO NOT use plaintext passwords in production
+  password: 'admin123',
 };
 
-// Admin login endpoint (development/demo)
+// Admin login endpoint
 app.post('/api/admin/login', (req, res) => {
   const { userId, password } = req.body || {};
   if (!userId || !password) {
     return res.status(400).json({ ok: false, message: 'Missing userId or password' });
   }
 
-  // accept either id or email for userId
   const matches = (userId === demoAdmin.id || userId === demoAdmin.email) && password === demoAdmin.password;
   if (!matches) {
     return res.status(401).json({ ok: false, message: 'Invalid credentials' });
   }
 
-  // return a simple demo token
   return res.json({ ok: true, message: 'Logged in', token: 'demo-admin-token' });
 });
 
-// Forgot password endpoint (development/demo)
-app.post('/api/admin/forgot', (req, res) => {
-  const { resetId } = req.body || {};
-  if (!resetId) return res.status(400).json({ ok: false, message: 'Missing reset id' });
-
-  // In a real app you'd look up the user and send an email. Here we just simulate success.
-  const exists = resetId === demoAdmin.id || resetId === demoAdmin.email;
-  // Respond 200 in all cases to avoid leaking which ids exist
-  return res.json({ ok: true, message: 'If an account exists an email has been sent', accountFound: exists });
-});
-
-const demoUsers = [
-  { id: 'user1', email: 'user1@localhost', name: 'Demo User', password: 'password123' },
-];
-
-// Helper: extract user id from Authorization header for demo citizen tokens
+// Helper: extract user id from Authorization header
 const userIdFromAuthHeader = (req) => {
   let auth = (req.headers.authorization || '').trim();
   if (!auth) return null;
   if (auth.toLowerCase().startsWith('bearer ')) auth = auth.slice(7).trim();
-  // Expect tokens of the form: demo-token-<userId>
   const m = auth.match(/^demo-token-(.+)$/);
   if (m) return m[1];
   return null;
 };
 
-// Admin create user (development/demo)
-app.post('/api/admin/create-user', (req, res) => {
-  // Expect Authorization: Bearer demo-admin-token
-
+// Admin create user
+app.post('/api/admin/create-user', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') {
     return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -97,257 +79,345 @@ app.post('/api/admin/create-user', (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ ok: false, message: 'Missing fields' });
 
-  const exists = demoUsers.find((u) => u.email === email);
-  if (exists) return res.status(409).json({ ok: false, message: 'User already exists' });
+  try {
+    const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (rows.length > 0) return res.status(409).json({ ok: false, message: 'User already exists' });
 
-  const newUser = { id: `user${demoUsers.length + 1}`, email, name, password };
-  demoUsers.push(newUser);
-  return res.json({ ok: true, message: 'User created', user: { id: newUser.id, email: newUser.email, name: newUser.name } });
+    const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);
+    return res.json({ ok: true, message: 'User created', user: { id: result.insertId, email, name } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Admin list users (development/demo)
-app.get('/api/admin/users', (req, res) => {
+// Admin list users
+app.get('/api/admin/users', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') {
     return res.status(401).json({ ok: false, message: 'Unauthorized' });
   }
 
-  // return users without passwords
-  const users = demoUsers.map((u) => ({ id: u.id, email: u.email, name: u.name }));
-  return res.json({ ok: true, users });
+  try {
+    const [rows] = await db.query('SELECT id, name, email FROM users');
+    res.json({ ok: true, users: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Admin: create a new doctor (admin menu / UI can POST here after login)
-app.post('/api/admin/doctors', (req, res) => {
+// Admin: create a new doctor
+app.post('/api/admin/doctors', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  const { id: providedId, name, specialty } = req.body || {};
+  const { name, specialty } = req.body || {};
   if (!name || !specialty) return res.status(400).json({ ok: false, message: 'Missing name or specialty' });
 
-  // if admin provided an id, validate it's not already used
-  if (providedId) {
-    const exists = doctors.find(d => d.id === providedId);
-    if (exists) return res.status(409).json({ ok: false, message: 'Doctor id already exists' });
+  try {
+    const [result] = await db.query('INSERT INTO doctors (name, specialty) VALUES (?, ?)', [name, specialty]);
+    return res.json({ ok: true, message: 'Doctor created', doctor: { id: result.insertId, name, specialty, availability: [] } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
   }
-
-  const id = providedId || `doc${(Array.isArray(doctors) ? doctors.length : 0) + 1}`;
-  const newDoctor = { id, name, specialty, availability: [] };
-  doctors.push(newDoctor);
-  return res.json({ ok: true, message: 'Doctor created', doctor: newDoctor });
 });
 
-// Admin: list all doctors with full availability (for admin UI/menu)
-app.get('/api/admin/doctors', (req, res) => {
+// Admin: list all doctors
+app.get('/api/admin/doctors', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  // return full doctor objects (including availability) for admin UI
-  return res.json({ ok: true, doctors });
+  try {
+    const [doctors] = await db.query('SELECT * FROM doctors');
+    const [slots] = await db.query('SELECT * FROM availability');
+
+    const fullDoctors = doctors.map(d => ({
+      ...d,
+      availability: slots.filter(s => s.doctorId === d.id).map(s => ({ ...s, booked: !!s.booked }))
+    }));
+    return res.json({ ok: true, doctors: fullDoctors });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
 // Citizen register
-app.post('/api/citizen/register', (req, res) => {
+app.post('/api/citizen/register', async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ ok: false, message: 'Missing fields' });
-  const exists = demoUsers.find((u) => u.email === email);
-  if (exists) return res.status(409).json({ ok: false, message: 'User already exists' });
-  const newUser = { id: `user${demoUsers.length + 1}`, email, name, password };
-  demoUsers.push(newUser);
-  return res.json({ ok: true, message: 'Registered', token: `demo-token-${newUser.id}`, user: { id: newUser.id, email: newUser.email, name: newUser.name } });
+
+  try {
+    const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (rows.length > 0) return res.status(409).json({ ok: false, message: 'User already exists' });
+
+    const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);
+    const newUser = { id: result.insertId, email, name };
+    return res.json({ ok: true, message: 'Registered', token: `demo-token-${newUser.id}`, user: newUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
 // Citizen login
-app.post('/api/citizen/login', (req, res) => {
+app.post('/api/citizen/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ ok: false, message: 'Missing email or password' });
-  const user = demoUsers.find((u) => u.email === email && u.password === password);
-  if (!user) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
-  return res.json({ ok: true, message: 'Logged in', token: `demo-token-${user.id}`, user: { id: user.id, email: user.email, name: user.name } });
+
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+    if (rows.length === 0) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+
+    const row = rows[0];
+    return res.json({ ok: true, message: 'Logged in', token: `demo-token-${row.id}`, user: { id: row.id, email: row.email, name: row.name } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
 // Citizen forgot password
 app.post('/api/citizen/forgot', (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ ok: false, message: 'Missing email' });
-  const exists = demoUsers.find((u) => u.email === email);
-  // respond 200 in all cases to avoid leaking existence
-  return res.json({ ok: true, message: 'If an account exists an email has been sent', accountFound: !!exists });
+  return res.json({ ok: true, message: 'If an account exists, email sent.' });
 });
 
-const doctors = [
-  { id: 'doc1', name: 'Dr. Alice Smith', specialty: 'General Practitioner', availability: [] },
-  { id: 'doc2', name: 'Dr. Bob Jones', specialty: 'Cardiologist', availability: [] },
-  { id: 'doc3', name: 'Dr. Carol Evans', specialty: 'Dermatologist', availability: [] },
-];
-
-const appointments = []; // { id, userId, doctorId, datetime, reason, status }
-
-// Public: list doctors (include available future slots) — only return doctors that have scheduled slots
-app.get('/api/doctors', (req, res) => {
-  const now = Date.now();
-  const list = doctors.map((d) => {
-    const available = Array.isArray(d.availability)
-      ? d.availability
-          .filter(s => s && !s.booked && new Date(s.datetime).getTime() > now)
-          .map(s => ({ datetime: s.datetime, place: s.place || null }))
-      : [];
-    return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
-  })
-  // Only include doctors that have at least one available future slot
-  .filter(d => Array.isArray(d.availableSlots) && d.availableSlots.length > 0);
-
-  res.json({ ok: true, doctors: list });
+// Admin forgot password
+app.post('/api/admin/forgot', (req, res) => {
+  const { resetId } = req.body || {};
+  return res.json({ ok: true, message: 'Reset link sent.' });
 });
 
-// Citizen: list doctors that admin scheduled (requires citizen auth)
-app.get('/api/citizen/doctors', (req, res) => {
+// Public: list doctors
+app.get('/api/doctors', async (req, res) => {
+  try {
+    const [doctors] = await db.query('SELECT * FROM doctors');
+
+    // MySQL uses standard SQL dates, format might need adjustment or is string by default in JS
+    // We'll trust the driver to return Dates or ISO strings.
+    const now = new Date(); // Javascript date object
+
+    // Fetch VALID future slots
+    const [slots] = await db.query('SELECT * FROM availability WHERE booked = 0 AND datetime > NOW()');
+
+    const list = doctors.map(d => {
+      const available = slots
+        .filter(s => s.doctorId === d.id)
+        .map(s => ({ datetime: s.datetime, place: s.place || null }));
+      return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
+    }).filter(d => d.availableSlots.length > 0);
+
+    res.json({ ok: true, doctors: list });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+// Citizen: list doctors
+app.get('/api/citizen/doctors', async (req, res) => {
   const userId = userIdFromAuthHeader(req);
   if (!userId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  const now = Date.now();
-  const list = doctors.map((d) => {
-    const available = Array.isArray(d.availability)
-      ? d.availability
-          .filter(s => s && !s.booked && new Date(s.datetime).getTime() > now)
-          .map(s => ({ datetime: s.datetime, place: s.place || null }))
-      : [];
-    return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
-  }).filter(d => Array.isArray(d.availableSlots) && d.availableSlots.length > 0);
+  // Reuse logic: fetch doctors with future slots
+  try {
+    const [doctors] = await db.query('SELECT * FROM doctors');
+    const [slots] = await db.query('SELECT * FROM availability WHERE booked = 0 AND datetime > NOW()');
 
-  return res.json({ ok: true, doctors: list });
-});
+    const list = doctors.map(d => {
+      const available = slots
+        .filter(s => s.doctorId === d.id)
+        .map(s => ({ datetime: s.datetime, place: s.place || null }));
+      return { id: d.id, name: d.name, specialty: d.specialty, availableSlots: available };
+    }).filter(d => d.availableSlots.length > 0);
 
-// Admin: add availability slots for a doctor
-app.post('/api/admin/doctors/:id/availability', (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
-
-  const id = req.params.id;
-  const doctor = doctors.find(d => d.id === id);
-  if (!doctor) return res.status(404).json({ ok: false, message: 'Doctor not found' });
-
-  // Accept multiple formats: { slots: [...] } where each slot is string or { datetime, place }
-  // or single { datetime, place }
-  const { slots, datetime, place } = req.body || {};
-  let toAdd = [];
-  if (Array.isArray(slots)) {
-    toAdd = slots;
-  } else if (datetime) {
-    toAdd = [{ datetime, place }];
+    res.json({ ok: true, doctors: list });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
   }
-
-  if (!toAdd || toAdd.length === 0) return res.status(400).json({ ok: false, message: 'No slots provided' });
-
-  // ensure availability array
-  if (!Array.isArray(doctor.availability)) doctor.availability = [];
-  const added = [];
-  const now = Date.now();
-  toAdd.forEach((entry) => {
-    try {
-      let dt = null;
-      let pl = null;
-      if (typeof entry === 'string') {
-        dt = entry;
-      } else if (entry && typeof entry === 'object') {
-        dt = entry.datetime;
-        pl = entry.place;
-      }
-      if (!dt) return; // skip invalid
-      const t = new Date(dt).getTime();
-      if (Number.isNaN(t)) return; // skip invalid
-      if (t <= now) return; // skip past
-      const exists = doctor.availability.find(s => s.datetime === dt);
-      if (!exists) {
-        const slot = { datetime: dt, place: pl || null, booked: false };
-        doctor.availability.push(slot);
-        added.push(slot);
-      }
-    } catch (e) {
-      // ignore parse errors
-    }
-  });
-
-  return res.json({ ok: true, message: 'Slots added', added, availability: doctor.availability });
 });
 
-// Admin: remove an availability slot (by datetime exact match)
-app.delete('/api/admin/doctors/:id/availability', (req, res) => {
+// Admin: add availability
+app.post('/api/admin/doctors/:id/availability', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const id = req.params.id;
-  const doctor = doctors.find(d => d.id === id);
-  if (!doctor) return res.status(404).json({ ok: false, message: 'Doctor not found' });
+  const { datetime, place } = req.body || {};
+  if (!datetime) return res.status(400).json({ ok: false, message: 'No slot provided' });
 
-  const { datetime } = req.body || {};
-  if (!datetime) return res.status(400).json({ ok: false, message: 'datetime required' });
-  if (!Array.isArray(doctor.availability)) doctor.availability = [];
+  // MySQL datetime format: YYYY-MM-DD HH:MM:SS
+  const jsDate = new Date(datetime);
+  if (isNaN(jsDate.getTime())) return res.status(400).json({ ok: false, message: 'Invalid Date' });
 
-  const idx = doctor.availability.findIndex(s => s.datetime === datetime);
-  if (idx === -1) return res.status(404).json({ ok: false, message: 'Slot not found' });
-  const [removed] = doctor.availability.splice(idx, 1);
-  return res.json({ ok: true, message: 'Slot removed', removed, availability: doctor.availability });
+  // Conveniently, mysql2 handles JS Date objects in parameterized queries often, but better safe with ISO string or similar
+  // Let's rely on mysql2 serialization
+  try {
+    await db.query('INSERT INTO availability (doctorId, datetime, place, booked) VALUES (?, ?, ?, 0)', [id, jsDate, place]);
+    return res.json({ ok: true, message: 'Slot added' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Create appointment (citizen must be authenticated with demo token)
-app.post('/api/citizen/appointments', (req, res) => {
+// Admin: remove availability
+app.delete('/api/admin/doctors/:id/availability', async (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  const { datetime } = req.body || {};
+
+  try {
+    await db.query('DELETE FROM availability WHERE doctorId = ? AND datetime = ?', [req.params.id, new Date(datetime)]);
+    return res.json({ ok: true, message: 'Slot removed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+// Create appointment
+app.post('/api/citizen/appointments', async (req, res) => {
   const userId = userIdFromAuthHeader(req);
   if (!userId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const { doctorId, datetime, reason } = req.body || {};
   if (!doctorId || !datetime) return res.status(400).json({ ok: false, message: 'Missing doctorId or datetime' });
 
-  const doctor = doctors.find((d) => d.id === doctorId);
-  if (!doctor) return res.status(400).json({ ok: false, message: 'Doctor not found' });
+  const jsDate = new Date(datetime);
 
-  // check availability: must find a matching slot that is not booked and in future
-  if (!Array.isArray(doctor.availability)) doctor.availability = [];
-  const slot = doctor.availability.find(s => s.datetime === datetime && !s.booked);
-  if (!slot) {
-    return res.status(409).json({ ok: false, message: 'Requested timeslot is not available' });
+  try {
+    // Check slot
+    const [slots] = await db.query('SELECT id, place FROM availability WHERE doctorId = ? AND datetime = ? AND booked = 0', [doctorId, jsDate]);
+    if (slots.length === 0) return res.status(409).json({ ok: false, message: 'Slot not available' });
+    const slot = slots[0];
+
+    // Mark booked
+    await db.query('UPDATE availability SET booked = 1 WHERE id = ?', [slot.id]);
+
+    // Create appointment
+    const [result] = await db.query('INSERT INTO appointments (userId, doctorId, datetime, reason, place, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, doctorId, jsDate, reason, slot.place, 'requested']);
+
+    return res.json({ ok: true, message: 'Appointment requested', appointment: { id: result.insertId, userId, doctorId, datetime, reason, status: 'requested' } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
   }
-
-  // mark slot as booked
-  slot.booked = true;
-
-  const id = `appt${appointments.length + 1}`;
-  const appt = { id, userId, doctorId, datetime, place: slot.place || '', reason: reason || '', status: 'requested' };
-  appointments.push(appt);
-  return res.json({ ok: true, message: 'Appointment requested', appointment: appt });
 });
 
-// List appointments for authenticated citizen
-app.get('/api/citizen/appointments', (req, res) => {
+// List appointments for citizen
+app.get('/api/citizen/appointments', async (req, res) => {
   const userId = userIdFromAuthHeader(req);
   if (!userId) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  const userAppts = appointments.filter((a) => a.userId === userId).map((a) => ({ ...a }));
-  return res.json({ ok: true, appointments: userAppts });
+  try {
+    const [rows] = await db.query('SELECT * FROM appointments WHERE userId = ?', [userId]);
+
+    // Fetch attachments for these appointments
+    if (rows.length > 0) {
+      const ids = rows.map(r => r.id);
+      const [attachments] = await db.query('SELECT * FROM appointment_attachments WHERE appointmentId IN (?)', [ids]);
+
+      rows.forEach(row => {
+        row.attachments = attachments.filter(a => a.appointmentId === row.id).map(a => ({
+          ...a,
+          url: `/uploads/${a.filename}`
+        }));
+      });
+    }
+
+    return res.json({ ok: true, appointments: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Admin list appointments (development/demo)
-app.get('/api/admin/appointments', (req, res) => {
+// Admin list appointments
+app.get('/api/admin/appointments', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  const full = appointments.map((a) => {
-    const user = demoUsers.find((u) => u.id === a.userId) || null;
-    const doctor = doctors.find((d) => d.id === a.doctorId) || null;
-    return {
-      ...a,
-      user: user ? { id: user.id, name: user.name, email: user.email } : null,
-      doctor: doctor ? { id: doctor.id, name: doctor.name, specialty: doctor.specialty } : null,
-    };
-  });
-  return res.json({ ok: true, appointments: full });
+  const sql = `
+    SELECT a.*, u.name as userName, u.email as userEmail, d.name as doctorName, d.specialty as doctorSpecialty 
+    FROM appointments a
+    LEFT JOIN users u ON a.userId = u.id
+    LEFT JOIN doctors d ON a.doctorId = d.id
+  `;
+  try {
+    const [rows] = await db.query(sql);
+
+    let attachments = [];
+    if (rows.length > 0) {
+      const ids = rows.map(r => r.id);
+      const [attRows] = await db.query('SELECT * FROM appointment_attachments WHERE appointmentId IN (?)', [ids]);
+      attachments = attRows;
+    }
+
+    const full = rows.map(r => ({
+      id: r.id,
+      datetime: r.datetime,
+      reason: r.reason,
+      status: r.status,
+      rejectionReason: r.rejectionReason,
+      userId: r.userId,
+      doctorId: r.doctorId,
+      user: { id: r.userId, name: r.userName, email: r.userEmail },
+      doctor: { id: r.doctorId, name: r.doctorName, specialty: r.doctorSpecialty },
+      attachments: attachments.filter(a => a.appointmentId === r.id).map(a => ({
+        id: a.id,
+        filename: a.filename,
+        originalname: a.originalname,
+        url: `/uploads/${a.filename}`
+      }))
+    }));
+    return res.json({ ok: true, appointments: full });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Multer setup for uploads (PDF and JPG)
+// Admin approve
+app.post('/api/admin/appointments/:id/approve', async (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  try {
+    const [result] = await db.query("UPDATE appointments SET status = 'approved' WHERE id = ?", [req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ ok: false, message: 'Not found' });
+    return res.json({ ok: true, message: 'Appointment approved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+// Admin reject
+app.post('/api/admin/appointments/:id/reject', async (req, res) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+  try {
+    const [result] = await db.query("UPDATE appointments SET status = 'rejected' WHERE id = ?", [req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ ok: false, message: 'Not found' });
+    return res.json({ ok: true, message: 'Appointment rejected' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+// Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
-    // prefix with timestamp to avoid collisions
     const safe = file.originalname.replace(/[^a-z0-9_.-]/gi, '_');
     cb(null, `${Date.now()}-${safe}`);
   },
@@ -359,81 +429,57 @@ const upload = multer({
     if (!ok) return cb(new Error('Only PDF and JPG files are allowed'));
     cb(null, true);
   },
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-// Admin upload attachment for an appointment (accept multiple files)
-app.post('/api/admin/appointments/:id/upload', upload.array('files'), (req, res) => {
+app.post('/api/admin/appointments/:id/upload', upload.array('files'), async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const id = req.params.id;
-  const appt = appointments.find((a) => a.id === id);
-  if (!appt) return res.status(404).json({ ok: false, message: 'Appointment not found' });
-
   if (!req.files || req.files.length === 0) return res.status(400).json({ ok: false, message: 'No files uploaded' });
 
-  // ensure attachments array
-  if (!Array.isArray(appt.attachments)) appt.attachments = [];
-  const added = [];
-  req.files.forEach((f) => {
-    const fileMeta = { filename: f.filename, originalname: f.originalname, mimetype: f.mimetype, size: f.size, url: `/uploads/${f.filename}` };
-    appt.attachments.push(fileMeta);
-    added.push(fileMeta);
-  });
-
-  return res.json({ ok: true, message: 'Files uploaded', attachments: added });
+  try {
+    const savedAttachments = [];
+    for (const f of req.files) {
+      const [result] = await db.query(
+        'INSERT INTO appointment_attachments (appointmentId, filename, originalname, mimetype) VALUES (?, ?, ?, ?)',
+        [id, f.filename, f.originalname, f.mimetype]
+      );
+      savedAttachments.push({
+        id: result.insertId,
+        filename: f.filename,
+        originalname: f.originalname,
+        url: `/uploads/${f.filename}`
+      });
+    }
+    return res.json({ ok: true, message: 'Files uploaded', attachments: savedAttachments });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Admin delete attachment for an appointment
-app.delete('/api/admin/appointments/:id/attachments/:filename', (req, res) => {
+app.delete('/api/admin/appointments/:id/attachments/:filename', async (req, res) => {
   const auth = (req.headers.authorization || '').trim();
   if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
-  const id = req.params.id;
-  const filename = req.params.filename;
-  const appt = appointments.find((a) => a.id === id);
-  if (!appt) return res.status(404).json({ ok: false, message: 'Appointment not found' });
-  if (!Array.isArray(appt.attachments)) appt.attachments = [];
-
-  const idx = appt.attachments.findIndex((att) => att.filename === filename);
-  if (idx === -1) return res.status(404).json({ ok: false, message: 'Attachment not found' });
-
-  const [removed] = appt.attachments.splice(idx, 1);
-  const filePath = path.join(UPLOAD_DIR, removed.filename);
-  fs.unlink(filePath, (err) => {
-    // if unlink fails, log but still return success for metadata removal
-    if (err && err.code !== 'ENOENT') console.error('Failed to delete file', filePath, err);
-    return res.json({ ok: true, message: 'Attachment deleted', attachment: removed });
-  });
+  const { id, filename } = req.params;
+  try {
+    await db.query('DELETE FROM appointment_attachments WHERE appointmentId = ? AND filename = ?', [id, filename]);
+    // Attempt to delete file from disk (optional, handled silently if fails)
+    const filePath = path.join(UPLOAD_DIR, filename);
+    fs.unlink(filePath, (err) => {
+      if (err) console.error('Error deleting file:', err);
+    });
+    return res.json({ ok: true, message: 'Deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
-// Admin approve appointment
-app.post('/api/admin/appointments/:id/approve', (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
-
-  const id = req.params.id;
-  const appt = appointments.find((a) => a.id === id);
-  if (!appt) return res.status(404).json({ ok: false, message: 'Appointment not found' });
-  appt.status = 'approved';
-  return res.json({ ok: true, message: 'Appointment approved', appointment: appt });
-});
-
-// Admin reject appointment (optional reason in body)
-app.post('/api/admin/appointments/:id/reject', (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
-
-  const id = req.params.id;
-  const { reason } = req.body || {};
-  const appt = appointments.find((a) => a.id === id);
-  if (!appt) return res.status(404).json({ ok: false, message: 'Appointment not found' });
-  appt.status = 'rejected';
-  if (reason) appt.rejectionReason = reason;
-  return res.json({ ok: true, message: 'Appointment rejected', appointment: appt });
-});
-
-app.listen(port, () => {
-  console.log(`Health backend listening on port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Health backend listening on port ${port} (MySQL)`);
+  console.log(`Accessible at http://127.0.0.1:${port}/`);
 });

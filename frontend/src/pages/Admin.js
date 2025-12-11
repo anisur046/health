@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-// Prefer REACT_APP_API_BASE when provided. In development default to localhost:3001
+// Prefer REACT_APP_API_BASE when provided. In development default to 127.0.0.1:3001
 // to avoid proxy/misrouting issues (restart CRA after changing package.json/.env).
-const DEFAULT_DEV_BACKEND = 'http://localhost:3001/api';
+const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:3001/api';
 export default function Admin() {
     const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
@@ -483,7 +483,7 @@ export default function Admin() {
     };
 
     return (
-        <div className="" style={{backgroundColor: '#00ffbf',}}>
+        <div className="" style={{ backgroundColor: '#00ffbf', }}>
             <div className="admin-container">
                 <h2>Admin</h2>
 
@@ -599,20 +599,20 @@ export default function Admin() {
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                <tr>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Name</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Email</th>
-                                </tr>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Name</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Email</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                {users.map((u) => (
-                                    <tr key={u.id}>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.id}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.name}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.email}</td>
-                                    </tr>
-                                ))}
+                                    {users.map((u) => (
+                                        <tr key={u.id}>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.id}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.name}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.email}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         )}
@@ -627,88 +627,88 @@ export default function Admin() {
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                <tr>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>User</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Doctor</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Status</th>
-                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Actions</th>
-                                </tr>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>User</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Doctor</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Status</th>
+                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Actions</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                {appointments.map((a) => (
-                                    <tr key={a.id}>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.id}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.user ? `${a.user.name} (${a.user.email})` : a.userId}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.doctor ? `${a.doctor.name} — ${a.doctor.specialty}` : a.doctorId}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.status}{a.rejectionReason ? ` — ${a.rejectionReason}` : ''}</td>
-                                        <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>
-                                            {a.status === 'requested' && (
-                                                <>
-                                                    <button
-                                                        className="btn-primary"
-                                                        onClick={() => handleApprove(a.id)}
-                                                        style={{ marginRight: '8px' }}
-                                                    >
-                                                        Approve
-                                                    </button>
+                                    {appointments.map((a) => (
+                                        <tr key={a.id}>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.id}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.user ? `${a.user.name} (${a.user.email})` : a.userId}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.doctor ? `${a.doctor.name} — ${a.doctor.specialty}` : a.doctorId}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{a.status}{a.rejectionReason ? ` — ${a.rejectionReason}` : ''}</td>
+                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>
+                                                {a.status === 'requested' && (
+                                                    <>
+                                                        <button
+                                                            className="btn-primary"
+                                                            onClick={() => handleApprove(a.id)}
+                                                            style={{ marginRight: '8px' }}
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button
+                                                            className="btn-muted"
+                                                            onClick={() => handleReject(a.id)}
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {/* Upload control */}
+                                                <div style={{ marginTop: 8 }}>
+                                                    <input
+                                                        id={`file-${a.id}`}
+                                                        type="file"
+                                                        accept="application/pdf,image/jpeg"
+                                                        multiple
+                                                        style={{ display: 'none' }}
+                                                        onChange={(e) => {
+                                                            const files = e.target.files;
+                                                            if (files && files.length > 0) uploadAttachment(a.id, files);
+                                                            e.target.value = '';
+                                                        }}
+                                                    />
                                                     <button
                                                         className="btn-muted"
-                                                        onClick={() => handleReject(a.id)}
+                                                        onClick={() => document.getElementById(`file-${a.id}`).click()}
+                                                        disabled={uploadingId === a.id}
+                                                        style={{ marginRight: 8 }}
                                                     >
-                                                        Reject
+                                                        {uploadingId === a.id ? 'Uploading…' : 'Upload PDF/JPG'}
                                                     </button>
-                                                </>
-                                            )}
-                                            {/* Upload control */}
-                                            <div style={{ marginTop: 8 }}>
-                                                <input
-                                                    id={`file-${a.id}`}
-                                                    type="file"
-                                                    accept="application/pdf,image/jpeg"
-                                                    multiple
-                                                    style={{ display: 'none' }}
-                                                    onChange={(e) => {
-                                                        const files = e.target.files;
-                                                        if (files && files.length > 0) uploadAttachment(a.id, files);
-                                                        e.target.value = '';
-                                                    }}
-                                                />
-                                                <button
-                                                    className="btn-muted"
-                                                    onClick={() => document.getElementById(`file-${a.id}`).click()}
-                                                    disabled={uploadingId === a.id}
-                                                    style={{ marginRight: 8 }}
-                                                >
-                                                    {uploadingId === a.id ? 'Uploading…' : 'Upload PDF/JPG'}
-                                                </button>
-                                                {a.attachments && a.attachments.length > 0 && (
-                                                    <div style={{ marginTop: 6 }}>
-                                                        {a.attachments.map((att, idx) => (
-                                                            <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', marginRight: 8 }}>
-                                                                <a
-                                                                    href={(att.url && (att.url.startsWith('http') ? att.url : `${backendBase}${att.url}`)) || '#'}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    style={{ marginRight: 6 }}
-                                                                >
-                                                                    {att.originalname || att.filename}
-                                                                </a>
-                                                                <button
-                                                                    className="btn-muted"
-                                                                    onClick={() => deleteAttachment(a.id, att.filename)}
-                                                                    style={{ fontSize: 12, padding: '4px 6px' }}
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    {a.attachments && a.attachments.length > 0 && (
+                                                        <div style={{ marginTop: 6 }}>
+                                                            {a.attachments.map((att, idx) => (
+                                                                <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', marginRight: 8 }}>
+                                                                    <a
+                                                                        href={(att.url && (att.url.startsWith('http') ? att.url : `${backendBase}${att.url}`)) || '#'}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        style={{ marginRight: 6 }}
+                                                                    >
+                                                                        {att.originalname || att.filename}
+                                                                    </a>
+                                                                    <button
+                                                                        className="btn-muted"
+                                                                        onClick={() => deleteAttachment(a.id, att.filename)}
+                                                                        style={{ fontSize: 12, padding: '4px 6px' }}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         )}
