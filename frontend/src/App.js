@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
+import AdminDoctors from './pages/AdminDoctors';
+import AdminAppointments from './pages/AdminAppointments';
 import Reports from './pages/Reports';
 import Citizen from './pages/Citizen';
 import CitizenForm from './pages/CitizenForm';
@@ -36,9 +38,22 @@ export default function App() {
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           Home
         </NavLink>
-        <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-          Admin
-        </NavLink>
+        {adminAuthenticated ? (
+          <div className="nav-item-dropdown">
+            <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              Admin
+            </NavLink>
+            <div className="dropdown-content">
+              <NavLink to="/admin" end>Dashboard</NavLink>
+              <NavLink to="/admin/doctors">Doctor Availability</NavLink>
+              <NavLink to="/admin/appointments">Time Schedule</NavLink>
+            </div>
+          </div>
+        ) : (
+          <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+            Admin
+          </NavLink>
+        )}
         {adminAuthenticated && (
           <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Reports
@@ -67,6 +82,8 @@ export default function App() {
         <main className="page-container">
           <Routes>
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/doctors" element={<AdminDoctors />} />
+            <Route path="/admin/appointments" element={<AdminAppointments />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/citizen" element={<Citizen />} />
             <Route path="/citizen/appointments" element={<CitizenForm />} />
