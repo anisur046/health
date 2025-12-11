@@ -527,7 +527,13 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Health backend listening on port ${port} (MySQL)`);
-  console.log(`Accessible at http://127.0.0.1:${port}/`);
-});
+// Export for Vercel serverless
+module.exports = app;
+
+// Only listen if not in Vercel environment
+if (process.env.VERCEL !== '1') {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Health backend listening on port ${port} (MySQL)`);
+    console.log(`Accessible at http://127.0.0.1:${port}/`);
+  });
+}
