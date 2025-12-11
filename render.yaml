@@ -3,9 +3,8 @@ services:
     name: health-backend
     env: node
     plan: free
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: npm run install
+    startCommand: npm start
     envVars:
       - key: PORT
         value: 10000
