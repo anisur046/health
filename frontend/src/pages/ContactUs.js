@@ -15,12 +15,21 @@ export default function ContactUs() {
     setLoading(true);
     setStatus({ type: '', msg: '' });
 
+    // Get the backend URL from environment or use default
+    const backendUrl = process.env.REACT_APP_API_BASE || '';
+    const apiUrl = backendUrl ? `${backendUrl}/contact` : '/api/contact';
+
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status: ${res.status}`);
+      }
+
       const data = await res.json();
       if (data.ok) {
         setStatus({ type: 'success', msg: data.message });
@@ -29,8 +38,17 @@ export default function ContactUs() {
         setStatus({ type: 'error', msg: data.message || 'Error sending message' });
       }
     } catch (err) {
-      console.error(err);
-      setStatus({ type: 'error', msg: 'Failed to connect to server' });
+      console.error('Contact form error:', err);
+
+      // Provide helpful message based on the error
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        setStatus({
+          type: 'error',
+          msg: 'Backend server is not available. Please try again later or contact us at support@healthapp.com'
+        });
+      } else {
+        setStatus({ type: 'error', msg: 'Failed to send message. Please try again later.' });
+      }
     } finally {
       setLoading(false);
     }
