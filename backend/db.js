@@ -1,0 +1,140 @@
+const mysql = require('mysql2/promise');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const util = require('util');
+
+// Wrapper to make SQLite behave like mysql2/promise (returning [rows])
+class SQLiteWrapper {
+    constructor() {
+        const dbPath = path.resolve(__dirname, 'health.db');
+        this.db = new sqlite3.Database(dbPath);
+        console.log(`Connected to SQLite at ${dbPath}`);
+        this.init();
+    }
+
+    async query(sql, params = []) {
+        // Convert MySQL '?' params to SQLite '?' params (they are the same)
+        // Handle INSERT/UPDATE/DELETE (run) vs SELECT (all)
+        const method = sql.trim().toUpperCase().startsWith('SELECT') ? 'all' : 'run';
+
+        return new Promise((resolve, reject) => {
+            this.db[method](sql, params, function (err, rows) {
+                if (err) {
+                    // console.error('SQLite Error:', err.message, sql);
+                    return reject(err);
+                }
+                // Simulate MySQL return structure: [rows, fields]
+                // For INSERT, 'this' contains lastID and changes
+                if (method === 'run') {
+                    // mysql2 returns [ResultSetHeader]
+                    const result = {
+                        insertId: this.lastID,
+                        affectedRows: this.changes
+                    };
+                    resolve([result, null]);
+                } else {
+                    resolve([rows, null]);
+                }
+            });
+        });
+    }
+
+    // Initialize tables if not exist (Schema matching MySQL setup)
+    init() {
+        this.db.serialize(() => {
+            this.db.run(`CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE,
+                name TEXT,
+                password TEXT,
+                role TEXT DEFAULT 'citizen',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
+
+            this.db.run(`CREATE TABLE IF NOT EXISTS doctors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                specialty TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
+
+            this.db.run(`CREATE TABLE IF NOT EXISTS availability (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                doctorId INTEGER,
+                datetime TEXT,
+                place TEXT,
+                booked INTEGER DEFAULT 0,
+                FOREIGN KEY(doctorId) REFERENCES doctors(id)
+            )`);
+
+            this.db.run(`CREATE TABLE IF NOT EXISTS appointments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                userId INTEGER,
+                doctorId INTEGER,
+                datetime TEXT,
+                reason TEXT,
+                place TEXT,
+                status TEXT DEFAULT 'requested',
+                rejectionReason TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(userId) REFERENCES users(id),
+                FOREIGN KEY(doctorId) REFERENCES doctors(id)
+            )`);
+
+            this.db.run(`CREATE TABLE IF NOT EXISTS appointment_attachments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                appointmentId INTEGER,
+                filename TEXT,
+                originalname TEXT,
+                mimetype TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(appointmentId) REFERENCES appointments(id)
+            )`);
+        });
+    }
+}
+
+let pool;
+
+// Simple logic: If running locally with MySQL running, use it.
+// If on Render (usually no local MySQL) or fallback, use SQLite.
+async function getDB() {
+    if (pool) return pool;
+
+    // Try MySQL first if configured or localhost
+    // Modify this condition to prefer SQLite in production (Render) unless specific ENV vars are set
+    const useMySQL = process.env.MYSQL_HOST || (process.env.NODE_ENV !== 'production');
+
+    if (useMySQL && !process.env.FORCE_SQLITE) {
+        try {
+            pool = mysql.createPool({
+                host: process.env.MYSQL_HOST || '127.0.0.1',
+                user: process.env.MYSQL_USER || 'root',
+                password: process.env.MYSQL_PASSWORD || '',
+                database: process.env.MYSQL_DATABASE || 'health',
+                waitForConnections: true,
+                connectionLimit: 10,
+                queueLimit: 0,
+                connectTimeout: 2000 // fail fast
+            });
+            // Test connection
+            await pool.query('SELECT 1');
+            console.log('Using MySQL Database');
+            return pool;
+        } catch (err) {
+            console.log('MySQL connection failed, falling back to SQLite:', err.message);
+        }
+    }
+
+    console.log('Using SQLite Database');
+    pool = new SQLiteWrapper();
+    return pool;
+}
+
+// Export a proxy that delegates to the lazy-loaded pool
+module.exports = {
+    query: async (sql, params) => {
+        const db = await getDB();
+        return db.query(sql, params);
+    }
+};

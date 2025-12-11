@@ -3,7 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const db = require('./db-mysql'); // MySQL Connection Pool
+const db = require('./db'); // Universal DB Adapter
 
 const app = express();
 const port = process.env.PORT || 3001;

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: health-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FORCE_SQLITE
+        value: true
+      - key: NODE_ENV
+        value: production
