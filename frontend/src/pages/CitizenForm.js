@@ -143,6 +143,12 @@ export default function CitizenForm() {
     return normalized;
   };
 
+  const getDownloadHref = (att) => {
+    if (!att || !att.filename) return '#';
+    // Use the backend base URL + /api/download/filename
+    return `${API_BASE}/download/${att.filename}`;
+  };
+
   if (!token) {
     return (
       <div className="page-with-bg page-with-bg--appointment">
@@ -242,6 +248,13 @@ export default function CitizenForm() {
                                 style={{ marginRight: 8 }}
                               >
                                 {att.originalname || att.filename}
+                              </a>
+                              <a
+                                href={getDownloadHref(att)}
+                                download
+                                style={{ fontSize: '0.9em', color: '#0366d6' }}
+                              >
+                                Download
                               </a>
                             </div>
                           ))}

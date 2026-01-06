@@ -34,6 +34,20 @@ export default function App() {
 
   return (
     <div className="app-root">
+      {/* Global Bubble Background */}
+      <div className="global-bubbles">
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+      </div>
+
       <nav className="app-nav" style={{ marginBottom: 16 }}>
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           Home

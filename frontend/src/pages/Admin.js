@@ -50,43 +50,13 @@ export default function Admin() {
     const [createPassword, setCreatePassword] = useState('');
     const [creating, setCreating] = useState(false);
     // admin users list
-    const [users, setUsers] = useState([]);
 
-    // fetch admin users (requires adminToken)
-    const fetchUsers = async (token) => {
-        if (!token) return;
-        try {
-            const res = await fetch(`${API_BASE}/admin/users`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            });
-            console.debug('Admin fetch users GET', `${API_BASE}/admin/users`);
-            const data = await parseResponse(res);
-            if (!res.ok) {
-                const raw = (data && data._raw) || data.message || '';
-                if (raw && raw.toLowerCase().includes('proxy error')) {
-                    setError('Network/proxy error: unable to reach backend. Is the backend running?');
-                } else {
-                    setError(data.message || `Unable to fetch users (${res.status})`);
-                }
-                return;
-            }
-            setUsers(data.users || []);
-        } catch (err) {
-            setError(err.message || 'Unable to fetch users');
-        }
-    };
-
-    // auto-fetch users when token becomes available
-    useEffect(() => {
-        if (adminToken) fetchUsers(adminToken);
-    }, [adminToken]);
 
     // logout admin: clear token and reset state
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         setAdminToken('');
-        setUsers([]);
+        setAdminToken('');
         setNotice('Logged out');
         setError('');
         // Notify other parts of the app (navbar) that admin auth state changed
@@ -211,8 +181,7 @@ export default function Admin() {
             setCreateName('');
             setCreateEmail('');
             setCreatePassword('');
-            // refresh users list so the new user appears in the table
-            try { await fetchUsers(adminToken); } catch (err) { /* ignore */ }
+
         } catch (err) {
             setError(err.message || 'Unable to create user');
         } finally {
@@ -321,7 +290,8 @@ export default function Admin() {
 
                         <hr style={{ margin: '12px 0' }} />
 
-                        <h3>Create new user</h3>
+                        <h3>Create new Admin</h3>
+                        <p style={{ fontSize: '0.9em', color: '#666' }}>Note: This will create a new Administrator account, not a Citizen.</p>
                         <form onSubmit={handleCreateUser} className="admin-form" aria-label="Create user form">
                             <label htmlFor="create-name">Full name</label>
                             <input id="create-name" value={createName} onChange={(e) => setCreateName(e.target.value)} />
@@ -333,35 +303,11 @@ export default function Admin() {
                             <input id="create-pass" type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
 
                             <div className="form-row">
-                                <button type="submit" className="btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create user'}</button>
+                                <button type="submit" className="btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create Admin'}</button>
                             </div>
                         </form>
 
-                        <hr style={{ margin: '14px 0' }} />
 
-                        <h3>Users</h3>
-                        {users.length === 0 ? (
-                            <p style={{ color: '#586069' }}>No users yet.</p>
-                        ) : (
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr>
-                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>ID</th>
-                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Name</th>
-                                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Email</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {users.map((u) => (
-                                        <tr key={u.id}>
-                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.id}</td>
-                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.name}</td>
-                                            <td style={{ padding: '6px 8px', borderTop: '1px solid #eee' }}>{u.email}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
                     </div>
                 )}
             </div>

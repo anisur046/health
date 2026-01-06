@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
@@ -13,7 +14,49 @@ const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // serve uploaded files
+// serve uploaded files
 app.use('/uploads', express.static(UPLOAD_DIR));
+
+// Initialize DB tables for contact/subscribe
+(async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255),
+        email VARCHAR(255),
+        subject VARCHAR(255),
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS subscribers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('Tables contact_messages and subscribers checked/created.');
+  } catch (err) {
+    console.error('Failed to init tables:', err);
+  }
+})();
+
+// Force download endpoint
+app.get('/api/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  if (!filename || filename.includes('..') || filename.includes('/')) {
+    return res.status(400).send('Invalid filename');
+  }
+  const filePath = path.join(UPLOAD_DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send('File not found');
+  }
+  res.download(filePath, (err) => {
+    if (err) console.error('Download error:', err);
+  });
+});
 
 // CORS Configuration
 app.use(cors({
@@ -45,18 +88,42 @@ const demoAdmin = {
 };
 
 // Admin login endpoint
-app.post('/api/admin/login', (req, res) => {
+
+// Helper: is admin
+const isAdmin = (req) => {
+  const auth = (req.headers.authorization || '').trim();
+  if (!auth) return false;
+  if (auth === 'Bearer demo-admin-token') return true;
+  if (auth.startsWith('Bearer admin-token-')) return true;
+  return false;
+};
+
+// Admin login endpoint
+app.post('/api/admin/login', async (req, res) => {
   const { userId, password } = req.body || {};
   if (!userId || !password) {
     return res.status(400).json({ ok: false, message: 'Missing userId or password' });
   }
 
-  const matches = (userId === demoAdmin.id || userId === demoAdmin.email) && password === demoAdmin.password;
-  if (!matches) {
-    return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+  // 1. Check demo admin
+  if ((userId === demoAdmin.id || userId === demoAdmin.email) && password === demoAdmin.password) {
+    return res.json({ ok: true, message: 'Logged in', token: 'demo-admin-token' });
   }
 
-  return res.json({ ok: true, message: 'Logged in', token: 'demo-admin-token' });
+  // 2. Check DB for admin user
+  try {
+    // Check by email or id, AND check role='admin'
+    // Note: ID in DB is int, userId input might be string.
+    const [rows] = await db.query('SELECT * FROM users WHERE (email = ? OR id = ?) AND password = ? AND role = ?', [userId, userId, password, 'admin']);
+    if (rows.length > 0) {
+      const user = rows[0];
+      return res.json({ ok: true, message: 'Logged in', token: `admin-token-${user.id}`, user: { id: user.id, name: user.name, email: user.email } });
+    }
+  } catch (err) {
+    console.error('Admin login db error:', err);
+  }
+
+  return res.status(401).json({ ok: false, message: 'Invalid credentials' });
 });
 
 // Helper: extract user id from Authorization header
@@ -71,8 +138,7 @@ const userIdFromAuthHeader = (req) => {
 
 // Admin create user
 app.post('/api/admin/create-user', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') {
+  if (!isAdmin(req)) {
     return res.status(401).json({ ok: false, message: 'Unauthorized' });
   }
 
@@ -83,8 +149,8 @@ app.post('/api/admin/create-user', async (req, res) => {
     const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
     if (rows.length > 0) return res.status(409).json({ ok: false, message: 'User already exists' });
 
-    const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);
-    return res.json({ ok: true, message: 'User created', user: { id: result.insertId, email, name } });
+    const [result] = await db.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, password, 'admin']);
+    return res.json({ ok: true, message: 'Admin User created', user: { id: result.insertId, email, name, role: 'admin' } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: 'Database error' });
@@ -93,8 +159,7 @@ app.post('/api/admin/create-user', async (req, res) => {
 
 // Admin list users
 app.get('/api/admin/users', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') {
+  if (!isAdmin(req)) {
     return res.status(401).json({ ok: false, message: 'Unauthorized' });
   }
 
@@ -109,8 +174,7 @@ app.get('/api/admin/users', async (req, res) => {
 
 // Admin: create a new doctor
 app.post('/api/admin/doctors', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const { name, specialty } = req.body || {};
   if (!name || !specialty) return res.status(400).json({ ok: false, message: 'Missing name or specialty' });
@@ -126,8 +190,7 @@ app.post('/api/admin/doctors', async (req, res) => {
 
 // Admin: list all doctors
 app.get('/api/admin/doctors', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   try {
     const [doctors] = await db.query('SELECT * FROM doctors');
@@ -153,7 +216,7 @@ app.post('/api/citizen/register', async (req, res) => {
     const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
     if (rows.length > 0) return res.status(409).json({ ok: false, message: 'User already exists' });
 
-    const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);
+    const [result] = await db.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, password, 'citizen']);
     const newUser = { id: result.insertId, email, name };
     return res.json({ ok: true, message: 'Registered', token: `demo-token-${newUser.id}`, user: newUser });
   } catch (err) {
@@ -168,7 +231,7 @@ app.post('/api/citizen/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ ok: false, message: 'Missing email or password' });
 
   try {
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+    const [rows] = await db.query('SELECT * FROM users WHERE email = ? AND password = ? AND role = ?', [email, password, 'citizen']);
     if (rows.length === 0) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
 
     const row = rows[0];
@@ -192,6 +255,42 @@ app.post('/api/admin/forgot', (req, res) => {
   return res.json({ ok: true, message: 'Reset link sent.' });
 });
 
+// Contact Us form
+app.post('/api/contact', async (req, res) => {
+  const { name, email, subject, message } = req.body || {};
+  if (!name || !email || !message) return res.status(400).json({ ok: false, message: 'Missing fields' });
+
+  try {
+    await db.query('INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)', [name, email, subject || '', message]);
+    return res.json({ ok: true, message: 'Message sent' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
+// Subscribe form
+app.post('/api/subscribe', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ ok: false, message: 'Missing email' });
+
+  try {
+    // Ignore duplicates or handle gracefully
+    try {
+      await db.query('INSERT INTO subscribers (email) VALUES (?)', [email]);
+    } catch (e) {
+      if (e.code === 'ER_DUP_ENTRY' || e.message.includes('UNIQUE')) {
+        return res.json({ ok: true, message: 'Already subscribed' });
+      }
+      throw e;
+    }
+    return res.json({ ok: true, message: 'Subscribed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
+});
+
 // Public: list doctors
 app.get('/api/doctors', async (req, res) => {
   try {
@@ -202,7 +301,7 @@ app.get('/api/doctors', async (req, res) => {
     const now = new Date(); // Javascript date object
 
     // Fetch VALID future slots
-    const [slots] = await db.query('SELECT * FROM availability WHERE booked = 0 AND datetime > NOW()');
+    const [slots] = await db.query("SELECT * FROM availability WHERE booked = 0 AND datetime > ?", [now]);
 
     const list = doctors.map(d => {
       const available = slots
@@ -226,7 +325,7 @@ app.get('/api/citizen/doctors', async (req, res) => {
   // Reuse logic: fetch doctors with future slots
   try {
     const [doctors] = await db.query('SELECT * FROM doctors');
-    const [slots] = await db.query('SELECT * FROM availability WHERE booked = 0 AND datetime > NOW()');
+    const [slots] = await db.query("SELECT * FROM availability WHERE booked = 0 AND datetime > ?", [new Date()]);
 
     const list = doctors.map(d => {
       const available = slots
@@ -244,8 +343,7 @@ app.get('/api/citizen/doctors', async (req, res) => {
 
 // Admin: add availability
 app.post('/api/admin/doctors/:id/availability', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const id = req.params.id;
   const { datetime, place } = req.body || {};
@@ -268,8 +366,7 @@ app.post('/api/admin/doctors/:id/availability', async (req, res) => {
 
 // Admin: remove availability
 app.delete('/api/admin/doctors/:id/availability', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
   const { datetime } = req.body || {};
 
   try {
@@ -341,8 +438,7 @@ app.get('/api/citizen/appointments', async (req, res) => {
 
 // Admin list appointments
 app.get('/api/admin/appointments', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const sql = `
     SELECT a.*, u.name as userName, u.email as userEmail, d.name as doctorName, d.specialty as doctorSpecialty 
@@ -386,8 +482,7 @@ app.get('/api/admin/appointments', async (req, res) => {
 
 // Admin approve
 app.post('/api/admin/appointments/:id/approve', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   try {
     const [result] = await db.query("UPDATE appointments SET status = 'approved' WHERE id = ?", [req.params.id]);
@@ -401,8 +496,7 @@ app.post('/api/admin/appointments/:id/approve', async (req, res) => {
 
 // Admin reject
 app.post('/api/admin/appointments/:id/reject', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   try {
     const [result] = await db.query("UPDATE appointments SET status = 'rejected' WHERE id = ?", [req.params.id]);
@@ -433,8 +527,7 @@ const upload = multer({
 });
 
 app.post('/api/admin/appointments/:id/upload', upload.array('files'), async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const id = req.params.id;
   if (!req.files || req.files.length === 0) return res.status(400).json({ ok: false, message: 'No files uploaded' });
@@ -461,8 +554,7 @@ app.post('/api/admin/appointments/:id/upload', upload.array('files'), async (req
 });
 
 app.delete('/api/admin/appointments/:id/attachments/:filename', async (req, res) => {
-  const auth = (req.headers.authorization || '').trim();
-  if (!auth || auth !== 'Bearer demo-admin-token') return res.status(401).json({ ok: false, message: 'Unauthorized' });
+  if (!isAdmin(req)) return res.status(401).json({ ok: false, message: 'Unauthorized' });
 
   const { id, filename } = req.params;
   try {
