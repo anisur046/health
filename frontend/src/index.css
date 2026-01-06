@@ -802,7 +802,7 @@ pre {
 
 /* Mobile adjustments */
 @media (max-width: 480px) {
-  <<<<<<< HEAD=======.home-hero {
+  .home-hero {
     padding: 16px 12px;
     gap: 12px;
     min-height: auto;
@@ -857,7 +857,7 @@ pre {
     height: 10px;
   }
 
-  >>>>>>>65adddec1ee263ced65b9d800bc2ea573a936d7a .reports-actions {
+  .reports-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -865,8 +865,6 @@ pre {
   .btn-primary {
     width: 100%;
   }
-
-  <<<<<<< HEAD=======
 }
 
 /* Extra small mobile devices */
@@ -927,8 +925,6 @@ pre {
     width: auto;
     max-width: none;
   }
-
-  >>>>>>>65adddec1ee263ced65b9d800bc2ea573a936d7a
 }
 
 /* Contact and About small card variants */
@@ -1180,293 +1176,148 @@ pre {
   }
 }
 
-<<<<<<< HEAD
-
-/* Global Bubble Drop Animation */
-.global-bubbles {
+/* Global Water Background */
+.water-bubbles-global {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  /* Above background (0), below content (2) */
-  overflow: hidden;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #eef4fb 0%, #dce9f5 100%);
+  /* soft water gradient base */
 }
 
-.bubble {
-  position: absolute;
-  top: -100px;
-  width: 40px;
-  height: 40px;
-  background: rgba(3, 102, 214, 0.15);
-  /* Slightly more visible */
-  border-radius: 50%;
-  opacity: 0.6;
-  animation: drop 10s infinite ease-in;
+/* Ensure content sits above the global background */
+.app-nav,
+.page-container,
+.home-hero {
+  position: relative;
+  z-index: 2;
 }
 
-.bubble:nth-child(1) {
-  left: 10%;
-  width: 80px;
-  height: 80px;
-  animation-duration: 12s;
-  animation-delay: 0s;
+/* Override app-root background to be transparent so the fixed background shows through */
+.app-root {
+  background: transparent;
 }
 
-.bubble:nth-child(2) {
-  left: 20%;
-  width: 20px;
-  height: 20px;
-  animation-duration: 8s;
-  animation-delay: 2s;
-  background: rgba(11, 121, 208, 0.2);
+/* Footer Styles - Responsive */
+.app-footer {
+  background: linear-gradient(135deg, #0b3954 0%, #087ca7 100%);
+  color: #fff;
+  padding: 40px 20px 20px;
+  margin-top: 60px;
+  position: relative;
+  z-index: 10;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -4px 20px rgba(11, 57, 84, 0.15);
 }
 
-.bubble:nth-child(3) {
-  left: 35%;
-  width: 50px;
-  height: 50px;
-  animation-duration: 10s;
-  animation-delay: 4s;
+.footer-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.bubble:nth-child(4) {
-  left: 50%;
-  width: 30px;
-  height: 30px;
-  animation-duration: 11s;
-  animation-delay: 0s;
-  background: rgba(139, 92, 246, 0.15);
+.footer-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
 }
 
-.bubble:nth-child(5) {
-  left: 65%;
-  width: 60px;
-  height: 60px;
-  animation-duration: 13s;
-  animation-delay: 1s;
+.footer-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.bubble:nth-child(6) {
-  left: 80%;
-  width: 45px;
-  height: 45px;
-  animation-duration: 9s;
-  animation-delay: 3s;
-  background: rgba(0, 200, 150, 0.15);
+.footer-section p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  font-size: 14px;
 }
 
-.bubble:nth-child(7) {
-  left: 90%;
-  width: 25px;
-  height: 25px;
-  animation-duration: 7s;
-  animation-delay: 2s;
+.footer-section a {
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding: 6px 0;
+  font-size: 14px;
+  transition: color 200ms ease, padding-left 200ms ease;
 }
 
-.bubble:nth-child(8) {
-  left: 5%;
-  width: 70px;
-  height: 70px;
-  animation-duration: 14s;
-  animation-delay: 5s;
-  background: rgba(0, 150, 255, 0.12);
+.footer-section a:hover {
+  color: #fff;
+  padding-left: 8px;
 }
 
-.bubble:nth-child(9) {
-  left: 75%;
-  width: 35px;
-  height: 35px;
-  animation-duration: 10s;
-  animation-delay: 4s;
+.footer-bottom {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 20px;
+  text-align: center;
 }
 
-.bubble:nth-child(10) {
-  left: 45%;
-  width: 55px;
-  height: 55px;
-  animation-duration: 12s;
-  animation-delay: 2s;
+.footer-bottom p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
 }
 
-@keyframes drop {
-  0% {
-    top: -100px;
-    transform: translateX(0);
-    opacity: 0;
+/* Responsive Footer Styles */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 32px 16px 16px;
+    margin-top: 40px;
   }
 
-  20% {
-    opacity: 0.6;
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-bottom: 20px;
   }
 
-  50% {
-    transform: translateX(20px);
+  .footer-section {
+    text-align: center;
   }
 
-  80% {
-    opacity: 0.4;
-  }
-
-  100% {
-    top: 110vh;
-    transform: translateX(-20px);
-    opacity: 0;
+  .footer-section a:hover {
+    padding-left: 0;
   }
 }
 
-/* Ensure responsiveness for bubble container */
-@media (max-width: 600px) {
-  .bubble {
-    opacity: 0.3;
-    /* Subtle on mobile */
-    =======
+@media (max-width: 480px) {
+  .app-footer {
+    padding: 24px 12px 12px;
+    margin-top: 32px;
+  }
 
-    /* Global Water Background */
-    .water-bubbles-global {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-      background: linear-gradient(180deg, #eef4fb 0%, #dce9f5 100%);
-      /* soft water gradient base */
-    }
+  .footer-content {
+    gap: 20px;
+  }
 
-    /* Ensure content sits above the global background */
-    .app-nav,
-    .page-container,
-    .home-hero {
-      position: relative;
-      z-index: 2;
-    }
+  .footer-section h3 {
+    font-size: 18px;
+  }
 
-    /* Override app-root background to be transparent so the fixed background shows through */
-    .app-root {
-      background: transparent;
-    }
+  .footer-section h4 {
+    font-size: 14px;
+  }
 
-    /* Footer Styles - Responsive */
-    .app-footer {
-      background: linear-gradient(135deg, #0b3954 0%, #087ca7 100%);
-      color: #fff;
-      padding: 40px 20px 20px;
-      margin-top: 60px;
-      position: relative;
-      z-index: 10;
-      border-radius: 10px 10px 0 0;
-      box-shadow: 0 -4px 20px rgba(11, 57, 84, 0.15);
-    }
+  .footer-section p,
+  .footer-section a {
+    font-size: 13px;
+  }
 
-    .footer-content {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .footer-section h3 {
-      margin: 0 0 12px 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .footer-section h4 {
-      margin: 0 0 12px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .footer-section p {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.85);
-      line-height: 1.6;
-      font-size: 14px;
-    }
-
-    .footer-section a {
-      display: block;
-      color: rgba(255, 255, 255, 0.85);
-      text-decoration: none;
-      padding: 6px 0;
-      font-size: 14px;
-      transition: color 200ms ease, padding-left 200ms ease;
-    }
-
-    .footer-section a:hover {
-      color: #fff;
-      padding-left: 8px;
-    }
-
-    .footer-bottom {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding-top: 20px;
-      text-align: center;
-    }
-
-    .footer-bottom p {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 13px;
-    }
-
-    /* Responsive Footer Styles */
-    @media (max-width: 768px) {
-      .app-footer {
-        padding: 32px 16px 16px;
-        margin-top: 40px;
-      }
-
-      .footer-content {
-        grid-template-columns: 1fr;
-        gap: 24px;
-        padding-bottom: 20px;
-      }
-
-      .footer-section {
-        text-align: center;
-      }
-
-      .footer-section a:hover {
-        padding-left: 0;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .app-footer {
-        padding: 24px 12px 12px;
-        margin-top: 32px;
-      }
-
-      .footer-content {
-        gap: 20px;
-      }
-
-      .footer-section h3 {
-        font-size: 18px;
-      }
-
-      .footer-section h4 {
-        font-size: 14px;
-      }
-
-      .footer-section p,
-      .footer-section a {
-        font-size: 13px;
-      }
-
-      .footer-bottom p {
-        font-size: 12px;
-        >>>>>>>65adddec1ee263ced65b9d800bc2ea573a936d7a
-      }
-    }
+  .footer-bottom p {
+    font-size: 12px;
+  }
+}
