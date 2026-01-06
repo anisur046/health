@@ -1,0 +1,17 @@
+{
+  "name": "health-app",
+  "version": "1.0.0",
+  "description": "Health App - Full Stack Application",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "install": "cd backend && npm install",
+    "dev": "cd backend && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anisur046/health.git"
+  },
+  "keywords": ["health", "appointments", "medical"],
+  "author": "anisur046",
+  "license": "MIT"
+}

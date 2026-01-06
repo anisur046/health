@@ -77,6 +77,16 @@ async function setup() {
       )
     `);
 
+    // Messages (Contact Us)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255),
+        email VARCHAR(255),
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     console.log('Tables initialized in MySQL.');
     await db.end();
 

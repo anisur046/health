@@ -10,6 +10,8 @@ import CitizenForm from './pages/CitizenForm';
 import ContactUs from './pages/ContactUs';
 import About from './pages/About';
 
+import WaterBackground from './WaterBackground';
+
 export default function App() {
   // track admin authentication so navbar can show Reports after admin login
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!localStorage.getItem('adminToken'));
@@ -34,20 +36,7 @@ export default function App() {
 
   return (
     <div className="app-root">
-      {/* Global Bubble Background */}
-      <div className="global-bubbles">
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-        <div className="bubble"></div>
-      </div>
-
+      <WaterBackground />
       <nav className="app-nav" style={{ marginBottom: 16 }}>
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
           Home
@@ -92,21 +81,23 @@ export default function App() {
         <Route path="/" element={<Home />} />
       </Routes>
 
-      {!isHome && (
-        <main className="page-container">
-          <Routes>
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/doctors" element={<AdminDoctors />} />
-            <Route path="/admin/appointments" element={<AdminAppointments />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/citizen" element={<Citizen />} />
-            <Route path="/citizen/appointments" element={<CitizenForm />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/about" element={<About />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
-      )}
-    </div>
+      {
+        !isHome && (
+          <main className="page-container">
+            <Routes>
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/doctors" element={<AdminDoctors />} />
+              <Route path="/admin/appointments" element={<AdminAppointments />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/citizen" element={<Citizen />} />
+              <Route path="/citizen/appointments" element={<CitizenForm />} />
+              <Route path="/contact" element={<ContactUs />} />
+              <Route path="/about" element={<About />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </main>
+        )
+      }
+    </div >
   );
 }

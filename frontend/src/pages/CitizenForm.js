@@ -1,6 +1,7 @@
 // filepath: c:\Users\HP\WebstormProjects\health\frontend\src\pages\CitizenForm.js
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Footer from '../Footer';
 
 export default function CitizenForm() {
   const API_BASE = process.env.REACT_APP_API_BASE || '/api';
@@ -159,6 +160,7 @@ export default function CitizenForm() {
             <Link to="/citizen">Go to Citizen login/register</Link>
           </p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -270,6 +272,7 @@ export default function CitizenForm() {
           </table>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

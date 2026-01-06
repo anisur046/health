@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { jsPDF } from 'jspdf';
+import Footer from '../Footer';
 
 const DEFAULT_DEV_BACKEND = 'http://localhost:3001/api';
 export default function Reports() {
@@ -111,13 +112,13 @@ export default function Reports() {
 
   const downloadCSV = (list = appointments, filename = 'appointments.csv') => {
     if (!list || list.length === 0) { setError('No appointments to download'); return; }
-    const headers = ['ID','User','User Email','Doctor','Specialty','Datetime','Status','RejectionReason','Reason'];
+    const headers = ['ID', 'User', 'User Email', 'Doctor', 'Specialty', 'Datetime', 'Status', 'RejectionReason', 'Reason'];
     const rows = list.map((a) => [
       a.id, a.user ? a.user.name : a.userId, a.user ? a.user.email : '',
       a.doctor ? a.doctor.name : a.doctorId, a.doctor ? a.doctor.specialty : '',
       a.datetime || '', a.status || '', a.rejectionReason || '', a.reason || ''
     ]);
-    const escapeCell = (v) => { if (v == null) return ''; const s = String(v); return `"${s.replace(/"/g,'""')}"`; };
+    const escapeCell = (v) => { if (v == null) return ''; const s = String(v); return `"${s.replace(/"/g, '""')}"`; };
     const csv = [headers.map(escapeCell).join(',')].concat(rows.map((r) => r.map(escapeCell).join(','))).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -277,6 +278,7 @@ export default function Reports() {
           </>
         )}
       </div>
+      <Footer />
     </div>
-   );
- }
+  );
+}
