@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import React, { useMemo, useState } from 'react';
-=======
-import React, { useMemo } from 'react';
 import Footer from '../Footer';
->>>>>>> 65adddec1ee263ced65b9d800bc2ea573a936d7a
 
 export default function About() {
   const bubbles = useMemo(() => [
@@ -15,7 +11,7 @@ export default function About() {
     { left: 84, size: 56, delay: 1.9, duration: 16 }
   ], []);
 
-<<<<<<< HEAD
+  // Newsletter State
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -44,7 +40,7 @@ export default function About() {
       setSubscribing(false);
     }
   };
-=======
+
   const features = [
     {
       icon: '🏥',
@@ -86,7 +82,6 @@ export default function About() {
       description: 'Making healthcare services available to everyone, anywhere, anytime.'
     }
   ];
->>>>>>> 65adddec1ee263ced65b9d800bc2ea573a936d7a
 
   return (
     <div className="page-with-bg page-with-bg--about" style={{ position: 'relative', minHeight: '100vh' }}>
@@ -108,47 +103,6 @@ export default function About() {
       </div>
 
       <div className="about-container">
-<<<<<<< HEAD
-        <h2>About</h2>
-        <p style={{ lineHeight: 1.6, color: '#33475b' }}>
-          This Health App is a demo project showcasing a modern, responsive web application built with React and Node.js.
-          Our goal is to simplify healthcare management for both providers and citizens.
-        </p>
-
-        <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #eee' }} />
-
-        <h3>Stay Updated</h3>
-        <p style={{ fontSize: '0.95em', color: '#586069', marginBottom: 16 }}>
-          Subscribe to our newsletter to receive the latest updates and features.
-        </p>
-
-        {subscribed ? (
-          <div className="notice" style={{ display: 'inline-block' }}>
-            Thanks for subscribing!
-          </div>
-        ) : (
-          <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-              type="email"
-              required
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: 200,
-                padding: '10px 12px',
-                border: '1px solid #e1e6ec',
-                borderRadius: 8,
-                fontSize: 14
-              }}
-            />
-            <button type="submit" className="btn-primary" disabled={subscribing}>
-              {subscribing ? '...' : 'Subscribe'}
-            </button>
-          </form>
-        )}
-=======
         <h1 style={{ fontSize: '32px', marginBottom: '16px', color: '#0b3954', textAlign: 'center' }}>About Health App</h1>
 
         {/* Mission Statement */}
@@ -223,6 +177,42 @@ export default function About() {
           </div>
         </section>
 
+        {/* Newsletter Subscription (From HEAD) */}
+        <section style={{ marginBottom: '32px', padding: '24px', background: '#eef4fb', borderRadius: '12px' }}>
+          <h3>Stay Updated</h3>
+          <p style={{ fontSize: '0.95em', color: '#586069', marginBottom: 16 }}>
+            Subscribe to our newsletter to receive the latest updates and features.
+          </p>
+
+          {subscribed ? (
+            <div className="notice" style={{ display: 'inline-block' }}>
+              Thanks for subscribing!
+            </div>
+          ) : (
+            <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                type="email"
+                required
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 200,
+                  padding: '10px 12px',
+                  border: '1px solid #e1e6ec',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  background: '#fff'
+                }}
+              />
+              <button type="submit" className="btn-primary" disabled={subscribing}>
+                {subscribing ? '...' : 'Subscribe'}
+              </button>
+            </form>
+          )}
+        </section>
+
         {/* Technology Stack */}
         <section style={{ marginBottom: '32px' }}>
           <h2 style={{ fontSize: '24px', color: '#0366d6', marginBottom: '12px' }}>Technology</h2>
@@ -289,7 +279,6 @@ export default function About() {
             Contact Us
           </a>
         </section>
->>>>>>> 65adddec1ee263ced65b9d800bc2ea573a936d7a
       </div>
       <Footer />
     </div>
