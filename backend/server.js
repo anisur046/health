@@ -18,32 +18,20 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // serve uploaded files
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-// Initialize DB tables for contact/subscribe
+// Initialize DB tables (Moved to db.js for centralized handling)
+/*
 (async () => {
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS contact_messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT,
-        subject TEXT,
-        message TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS subscribers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
+...
     `);
     console.log('Tables contact_messages and subscribers checked/created.');
   } catch (err) {
     console.error('Failed to init tables:', err.message);
-    // Don't throw - allow server to continue even if tables fail
   }
 })();
+*/
 
 // Force download endpoint
 app.get('/api/download/:filename', (req, res) => {

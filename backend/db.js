@@ -148,6 +148,7 @@ async function getDB() {
             // Test connection
             await pool.query('SELECT 1');
             console.log('Using MySQL Database');
+            await initMySQL(pool);
             return pool;
         } catch (err) {
             console.log('MySQL connection failed, falling back to SQLite:', err.message);
@@ -157,6 +158,78 @@ async function getDB() {
     console.log('Using SQLite Database');
     pool = new SQLiteWrapper();
     return pool;
+}
+
+// Helper to initialize MySQL tables
+async function initMySQL(pool) {
+    const queries = [
+        `CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) UNIQUE,
+            name VARCHAR(255),
+            password VARCHAR(255),
+            role VARCHAR(50) DEFAULT 'citizen',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS doctors (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255),
+            specialty VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS availability (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            doctorId INT,
+            datetime DATETIME,
+            place VARCHAR(255),
+            booked BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY(doctorId) REFERENCES doctors(id) ON DELETE CASCADE
+        )`,
+        `CREATE TABLE IF NOT EXISTS appointments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            userId INT,
+            doctorId INT,
+            datetime DATETIME,
+            reason TEXT,
+            place VARCHAR(255),
+            status VARCHAR(50) DEFAULT 'requested',
+            rejectionReason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(doctorId) REFERENCES doctors(id) ON DELETE CASCADE
+        )`,
+        `CREATE TABLE IF NOT EXISTS appointment_attachments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            appointmentId INT,
+            filename VARCHAR(255),
+            originalname VARCHAR(255),
+            mimetype VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(appointmentId) REFERENCES appointments(id) ON DELETE CASCADE
+        )`,
+        `CREATE TABLE IF NOT EXISTS contact_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255),
+            email VARCHAR(255),
+            subject VARCHAR(255),
+            message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS subscribers (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`
+    ];
+
+    for (const sql of queries) {
+        try {
+            await pool.query(sql);
+        } catch (err) {
+            console.error('Error initializing MySQL table:', err.message);
+        }
+    }
+    console.log('MySQL Tables initialized.');
 }
 
 // Export a proxy that delegates to the lazy-loaded pool
