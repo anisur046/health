@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import Footer from '../Footer';
+import { API_BASE } from '../config';
 
-const DEFAULT_DEV_BACKEND = 'http://localhost:3001/api';
 export default function Reports() {
-  const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
   const parseResponse = async (res) => {
     const text = await res.text();

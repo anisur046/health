@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../Footer';
+import { API_BASE } from '../config';
 
 export default function Citizen() {
-  // Use explicit REACT_APP_API_BASE when provided. In development default to 127.0.0.1:3001
-  // to avoid proxy/misrouting issues (restart CRA after changing package.json/.env).
-  const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:3001/api';
-  const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
   // helper: safely parse JSON responses and return raw text if parsing fails
   const parseResponse = async (res) => {

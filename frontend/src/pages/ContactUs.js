@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Footer from '../Footer';
+import { API_BASE } from '../config';
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -15,9 +16,7 @@ export default function ContactUs() {
     setLoading(true);
     setStatus({ type: '', msg: '' });
 
-    // Get the backend URL from environment or use default
-    const backendUrl = process.env.REACT_APP_API_BASE || '';
-    const apiUrl = backendUrl ? `${backendUrl}/contact` : '/api/contact';
+    const apiUrl = `${API_BASE}/contact`;
 
     try {
       const res = await fetch(apiUrl, {

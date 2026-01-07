@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../Footer';
-
-const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:3001/api';
+import { API_BASE } from '../config';
 
 export default function AdminDoctors() {
     const navigate = useNavigate();
-    const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
     // Auth State
     const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || '');

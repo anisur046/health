@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Footer from '../Footer';
-
-// Prefer REACT_APP_API_BASE when provided. In development default to 127.0.0.1:3001
-// to avoid proxy/misrouting issues (restart CRA after changing package.json/.env).
-const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:3001/api';
+import { API_BASE } from '../config';
 
 export default function Admin() {
-    const API_BASE = process.env.REACT_APP_API_BASE || (process.env.NODE_ENV === 'development' ? DEFAULT_DEV_BACKEND : '/api');
 
     // Detect a likely misconfiguration: production build using relative /api on a static host
     const isProdNoApi = (() => {
@@ -241,8 +237,6 @@ export default function Admin() {
                                     Forgot password?
                                 </button>
                             </div>
-
-                            <p className="form-help">This page sends requests to the backend. Use demo credentials in development (admin / admin123).</p>
                         </form>
 
                         {showForgot && (

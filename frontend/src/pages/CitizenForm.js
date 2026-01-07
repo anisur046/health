@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../Footer';
+import { API_BASE } from '../config';
 
 export default function CitizenForm() {
-  const API_BASE = process.env.REACT_APP_API_BASE || '/api';
   // base for serving uploaded files: if API_BASE is absolute use that without `/api`, otherwise use relative path
   const backendBase = API_BASE && API_BASE.startsWith('http') ? API_BASE.replace(/\/api$/, '') : '';
 

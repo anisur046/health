@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Footer from '../Footer';
+import { API_BASE } from '../config';
 
 export default function About() {
   const bubbles = useMemo(() => [
@@ -15,7 +16,7 @@ export default function About() {
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001/api';
+
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
