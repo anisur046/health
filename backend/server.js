@@ -23,24 +23,25 @@ app.use('/uploads', express.static(UPLOAD_DIR));
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS contact_messages (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255),
-        email VARCHAR(255),
-        subject VARCHAR(255),
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        subject TEXT,
         message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS subscribers (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
     console.log('Tables contact_messages and subscribers checked/created.');
   } catch (err) {
-    console.error('Failed to init tables:', err);
+    console.error('Failed to init tables:', err.message);
+    // Don't throw - allow server to continue even if tables fail
   }
 })();
 
