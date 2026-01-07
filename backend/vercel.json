@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/api/index.js"
+        }
+    ],
+    "env": {
+        "FORCE_SQLITE": "true",
+        "NODE_ENV": "production"
+    }
+}
