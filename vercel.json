@@ -11,5 +11,9 @@
             "src": "/(.*)",
             "dest": "/api/index.js"
         }
-    ]
+    ],
+    "env": {
+        "FORCE_SQLITE": "true",
+        "NODE_ENV": "production"
+    }
 }

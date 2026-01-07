@@ -6,13 +6,24 @@ const util = require('util');
 // Wrapper to make SQLite behave like mysql2/promise (returning [rows])
 class SQLiteWrapper {
     constructor() {
-        const dbPath = path.resolve(__dirname, 'health.db');
-        this.db = new sqlite3.Database(dbPath);
-        console.log(`Connected to SQLite at ${dbPath}`);
-        this.init();
+        // Use /tmp on Vercel (serverless), local path otherwise
+        const dbPath = process.env.VERCEL
+            ? '/tmp/health.db'
+            : path.resolve(__dirname, 'health.db');
+        this.db = new sqlite3.Database(dbPath, (err) => {
+            if (err) {
+                console.error('SQLite connection error:', err);
+            } else {
+                console.log(`Connected to SQLite at ${dbPath}`);
+            }
+        });
+        this.initialized = this.init();
     }
 
     async query(sql, params = []) {
+        // Wait for initialization to complete
+        await this.initialized;
+
         // Convert MySQL '?' params to SQLite '?' params (they are the same)
         // Handle INSERT/UPDATE/DELETE (run) vs SELECT (all)
         const method = sql.trim().toUpperCase().startsWith('SELECT') ? 'all' : 'run';
@@ -40,56 +51,73 @@ class SQLiteWrapper {
     }
 
     // Initialize tables if not exist (Schema matching MySQL setup)
-    init() {
-        this.db.serialize(() => {
-            this.db.run(`CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE,
-                name TEXT,
-                password TEXT,
-                role TEXT DEFAULT 'citizen',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`);
+    async init() {
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                this.db.run(`CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE,
+                    name TEXT,
+                    password TEXT,
+                    role TEXT DEFAULT 'citizen',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )`, (err) => {
+                    if (err) console.error('Error creating users table:', err);
+                });
 
-            this.db.run(`CREATE TABLE IF NOT EXISTS doctors (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT,
-                specialty TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )`);
+                this.db.run(`CREATE TABLE IF NOT EXISTS doctors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    specialty TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )`, (err) => {
+                    if (err) console.error('Error creating doctors table:', err);
+                });
 
-            this.db.run(`CREATE TABLE IF NOT EXISTS availability (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                doctorId INTEGER,
-                datetime TEXT,
-                place TEXT,
-                booked INTEGER DEFAULT 0,
-                FOREIGN KEY(doctorId) REFERENCES doctors(id)
-            )`);
+                this.db.run(`CREATE TABLE IF NOT EXISTS availability (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    doctorId INTEGER,
+                    datetime TEXT,
+                    place TEXT,
+                    booked INTEGER DEFAULT 0,
+                    FOREIGN KEY(doctorId) REFERENCES doctors(id)
+                )`, (err) => {
+                    if (err) console.error('Error creating availability table:', err);
+                });
 
-            this.db.run(`CREATE TABLE IF NOT EXISTS appointments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER,
-                doctorId INTEGER,
-                datetime TEXT,
-                reason TEXT,
-                place TEXT,
-                status TEXT DEFAULT 'requested',
-                rejectionReason TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(userId) REFERENCES users(id),
-                FOREIGN KEY(doctorId) REFERENCES doctors(id)
-            )`);
+                this.db.run(`CREATE TABLE IF NOT EXISTS appointments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    userId INTEGER,
+                    doctorId INTEGER,
+                    datetime TEXT,
+                    reason TEXT,
+                    place TEXT,
+                    status TEXT DEFAULT 'requested',
+                    rejectionReason TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(userId) REFERENCES users(id),
+                    FOREIGN KEY(doctorId) REFERENCES doctors(id)
+                )`, (err) => {
+                    if (err) console.error('Error creating appointments table:', err);
+                });
 
-            this.db.run(`CREATE TABLE IF NOT EXISTS appointment_attachments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                appointmentId INTEGER,
-                filename TEXT,
-                originalname TEXT,
-                mimetype TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(appointmentId) REFERENCES appointments(id)
-            )`);
+                this.db.run(`CREATE TABLE IF NOT EXISTS appointment_attachments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    appointmentId INTEGER,
+                    filename TEXT,
+                    originalname TEXT,
+                    mimetype TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(appointmentId) REFERENCES appointments(id)
+                )`, (err) => {
+                    if (err) {
+                        console.error('Error creating appointment_attachments table:', err);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
         });
     }
 }
