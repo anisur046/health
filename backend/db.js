@@ -148,6 +148,7 @@ async function getDB() {
             // Test connection
             await pool.query('SELECT 1');
             console.log('Using MySQL Database');
+            pool.dbType = 'MySQL';
             await initMySQL(pool);
             return pool;
         } catch (err) {
@@ -157,6 +158,7 @@ async function getDB() {
 
     console.log('Using SQLite Database');
     pool = new SQLiteWrapper();
+    pool.dbType = 'SQLite';
     return pool;
 }
 
@@ -222,14 +224,18 @@ async function initMySQL(pool) {
         )`
     ];
 
+    const results = [];
     for (const sql of queries) {
         try {
             await pool.query(sql);
+            results.push({ sql: sql.substring(0, 50) + '...', status: 'success' });
         } catch (err) {
             console.error('Error initializing MySQL table:', err.message);
+            results.push({ sql: sql.substring(0, 50) + '...', status: 'error', error: err.message });
         }
     }
     console.log('MySQL Tables initialized.');
+    return results;
 }
 
 // Export a proxy that delegates to the lazy-loaded pool
@@ -237,5 +243,33 @@ module.exports = {
     query: async (sql, params) => {
         const db = await getDB();
         return db.query(sql, params);
+    },
+    getDebugInfo: async () => {
+        const db = await getDB();
+        let tables = [];
+        try {
+            if (db.dbType === 'MySQL') {
+                const [rows] = await db.query('SHOW TABLES');
+                tables = rows;
+            } else {
+                const [rows] = await db.query("SELECT name FROM sqlite_master WHERE type='table'");
+                tables = rows;
+            }
+        } catch (e) {
+            tables = ['Error fetching tables: ' + e.message];
+        }
+        return {
+            type: db.dbType || 'Unknown',
+            config: process.env.MYSQL_HOST ? { host: process.env.MYSQL_HOST } : 'No MySQL Host Env',
+            tables
+        };
+    },
+    initTables: async () => {
+        const db = await getDB();
+        if (db.dbType === 'MySQL') {
+            return await initMySQL(db);
+        } else {
+            return { message: 'SQLite init is automatic' };
+        }
     }
 };

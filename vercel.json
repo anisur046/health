@@ -7,7 +7,6 @@
         }
     ],
     "env": {
-        "FORCE_SQLITE": "true",
         "NODE_ENV": "production"
     }
 }

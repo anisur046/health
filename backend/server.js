@@ -62,8 +62,19 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'ok', database: 'MySQL', time: new Date().toISOString() });
+app.get('/api/status', async (req, res) => {
+  const debug = await db.getDebugInfo();
+  console.log('Debug info:', debug);
+  res.json({ status: 'ok', version: 'v2', debugType: typeof debug, database: debug, time: new Date().toISOString() });
+});
+
+app.get('/api/debug/init', async (req, res) => {
+  try {
+    const result = await db.initTables();
+    res.json({ ok: true, result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/api/hello', (req, res) => {
