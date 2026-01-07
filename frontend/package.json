@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:3001",
-  "homepage": "https://anisur046.github.io/health",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
