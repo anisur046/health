@@ -14,11 +14,11 @@ import WaterBackground from './WaterBackground';
 
 export default function App() {
   // track admin authentication so navbar can show Reports after admin login
-  const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!localStorage.getItem('adminToken'));
+  const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!sessionStorage.getItem('adminToken'));
   const location = useLocation();
 
   useEffect(() => {
-    const onAuth = () => setAdminAuthenticated(!!localStorage.getItem('adminToken'));
+    const onAuth = () => setAdminAuthenticated(!!sessionStorage.getItem('adminToken'));
     const onCustom = onAuth;
     const onStorage = (e) => {
       if (e.key === 'adminToken') setAdminAuthenticated(!!e.newValue);

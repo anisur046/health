@@ -39,7 +39,7 @@ export default function Admin() {
     const [sendingReset, setSendingReset] = useState(false);
 
     // Admin authenticated state (token stored in localStorage)
-    const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || '');
+    const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('adminToken') || '');
 
     // Create user fields (admin-only)
     const [createName, setCreateName] = useState('')
@@ -51,7 +51,7 @@ export default function Admin() {
 
     // logout admin: clear token and reset state
     const handleLogout = () => {
-        localStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminToken');
         setAdminToken('');
         setAdminToken('');
         setNotice('Logged out');
@@ -91,7 +91,7 @@ export default function Admin() {
 
             // save demo token and show notice
             if (data.token) {
-                localStorage.setItem('adminToken', data.token);
+                sessionStorage.setItem('adminToken', data.token);
                 setAdminToken(data.token);
                 // Notify other parts of the app (navbar) that admin auth state changed
                 try { window.dispatchEvent(new Event('admin-auth')); } catch (e) { /* ignore */ }

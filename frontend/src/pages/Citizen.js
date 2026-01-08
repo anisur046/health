@@ -32,7 +32,7 @@ export default function Citizen() {
   // authenticated citizen state
   const [user, setUser] = useState(() => {
     try {
-      const raw = localStorage.getItem('citizenUser');
+      const raw = sessionStorage.getItem('citizenUser');
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
@@ -71,9 +71,9 @@ export default function Citizen() {
         return;
       }
 
-      if (data.token) localStorage.setItem('citizenToken', data.token);
+      if (data.token) sessionStorage.setItem('citizenToken', data.token);
       if (data.user) {
-        localStorage.setItem('citizenUser', JSON.stringify(data.user));
+        sessionStorage.setItem('citizenUser', JSON.stringify(data.user));
         setUser(data.user);
       }
       setNotice(data.message || 'Registered');
@@ -112,9 +112,9 @@ export default function Citizen() {
         return;
       }
 
-      if (data.token) localStorage.setItem('citizenToken', data.token);
+      if (data.token) sessionStorage.setItem('citizenToken', data.token);
       if (data.user) {
-        localStorage.setItem('citizenUser', JSON.stringify(data.user));
+        sessionStorage.setItem('citizenUser', JSON.stringify(data.user));
         setUser(data.user);
       }
       setNotice(data.message || 'Logged in');
@@ -163,8 +163,8 @@ export default function Citizen() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('citizenToken');
-    localStorage.removeItem('citizenUser');
+    sessionStorage.removeItem('citizenToken');
+    sessionStorage.removeItem('citizenUser');
     setUser(null);
     setNotice('Logged out');
     setError('');

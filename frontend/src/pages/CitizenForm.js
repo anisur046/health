@@ -20,7 +20,7 @@ export default function CitizenForm() {
   const [appointments, setAppointments] = useState([]);
   const [loadingAppts, setLoadingAppts] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('citizenToken') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('citizenToken') : null;
 
   const parseResponse = async (res) => {
     const text = await res.text();

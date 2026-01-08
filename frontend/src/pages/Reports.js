@@ -21,7 +21,7 @@ export default function Reports() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const adminToken = localStorage.getItem('adminToken') || '';
+  const adminToken = sessionStorage.getItem('adminToken') || '';
 
   const fetchAppointments = async () => {
     if (!adminToken) { setError('Not authenticated as admin'); return; }

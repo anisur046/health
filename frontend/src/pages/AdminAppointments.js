@@ -8,7 +8,7 @@ export default function AdminAppointments() {
     const backendBase = API_BASE && API_BASE.startsWith('http') ? API_BASE.replace(/\/api$/, '') : '';
 
     // Auth
-    const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || '');
+    const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('adminToken') || '');
 
     // State
     const [appointments, setAppointments] = useState([]);

@@ -7,7 +7,7 @@ export default function AdminDoctors() {
     const navigate = useNavigate();
 
     // Auth State
-    const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || '');
+    const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('adminToken') || '');
 
     // Doctors State
     const [doctors, setDoctors] = useState([]);
