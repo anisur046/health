@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('./db'); // Universal DB Adapter
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -61,6 +62,63 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// Reusable Email Transporter Helper
+let transporterPromise = (async () => {
+  // 1. Try to use environment variables
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    console.log('Using configured SMTP transporter');
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        password: process.env.SMTP_PASS
+      }
+    });
+  }
+
+  // 2. Fallback to Ethereal Email for testing
+  console.log('No SMTP config found. Creating Ethereal test account...');
+  const testAccount = await nodemailer.createTestAccount();
+  return nodemailer.createTransport({
+    host: testAccount.smtp.host,
+    port: testAccount.smtp.port,
+    secure: testAccount.smtp.secure,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass
+    }
+  });
+})();
+
+async function sendEmail({ to, subject, text, html }) {
+  try {
+    const transporter = await transporterPromise;
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"Health Support" <support@healthapp.com>',
+      to,
+      subject,
+      text,
+      html
+    });
+
+    console.log(`Email sent to ${to}: ${info.messageId}`);
+    // If it's an Ethereal account, log the preview URL
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('------------------------------------------------------');
+      console.log('📧 TEST EMAIL PREVIEW URL:');
+      console.log(previewUrl);
+      console.log('------------------------------------------------------');
+    }
+    return info;
+  } catch (err) {
+    console.error('sendEmail Error:', err);
+    throw err;
+  }
+}
 
 app.get('/api/status', async (req, res) => {
   const debug = await db.getDebugInfo();
@@ -261,17 +319,33 @@ app.post('/api/citizen/forgot', async (req, res) => {
     const user = rows[0];
     // In a real app, generate a token, save hash to DB.
     // For this demo:
-    console.log(`
-      ======================================================
-      [MOCK EMAIL SERVICE]
-      To: ${email}
-      Subject: Password Reset Request
-      
-      Hello ${user.name},
-      You requested a password reset. 
-      Click here to reset: http://localhost:3000/reset-password?token=mock-token-for-${user.id}
-      ======================================================
-    `);
+    const resetUrl = `http://localhost:3000/reset-password?token=mock-token-for-${user.id}`;
+
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Password Reset Request',
+        text: `Hello ${user.name},\n\nYou requested a password reset. Click here to reset: ${resetUrl}`,
+        html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+                    <h2>Password Reset Request</h2>
+                    <p>Hello <strong>${user.name}</strong>,</p>
+                    <p>You requested a password reset for your Health Portal account.</p>
+                    <p>Click the button below to set a new password:</p>
+                    <div style="margin: 25px 0;">
+                        <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+                    </div>
+                    <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                    <p><a href="${resetUrl}">${resetUrl}</a></p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                    <p style="font-size: 0.8em; color: #777;">If you did not request this, please ignore this email.</p>
+                </div>
+            `
+      });
+    } catch (err) {
+      console.error('Failed to send forgot password email:', err);
+      // We still return success to the user but log the error
+    }
 
     return res.json({ ok: true, message: 'If an account exists, email sent.' });
   } catch (err) {
@@ -281,9 +355,46 @@ app.post('/api/citizen/forgot', async (req, res) => {
 });
 
 // Admin forgot password
-app.post('/api/admin/forgot', (req, res) => {
+app.post('/api/admin/forgot', async (req, res) => {
   const { resetId } = req.body || {};
-  return res.json({ ok: true, message: 'Reset link sent.' });
+  if (!resetId) return res.status(400).json({ ok: false, message: 'Missing user id or email' });
+
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE (email = ? OR id = ?) AND role = ?', [resetId, resetId, 'admin']);
+    if (rows.length === 0) {
+      console.log(`[Admin Forgot Password] Request for ${resetId} - Admin user not found.`);
+      return res.json({ ok: true, message: 'Reset link sent.' });
+    }
+
+    const user = rows[0];
+    const resetUrl = `http://localhost:3000/admin/reset-password?token=mock-token-for-${user.id}`;
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Admin Password Reset',
+        text: `Hello ${user.name},\n\nAn admin password reset was requested. Link: ${resetUrl}`,
+        html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+                    <h2>Admin Password Reset</h2>
+                    <p>Hello <strong>${user.name}</strong>,</p>
+                    <p>A password reset was requested for your Admin account.</p>
+                    <div style="margin: 25px 0;">
+                        <a href="${resetUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Admin Password</a>
+                    </div>
+                    <p><a href="${resetUrl}">${resetUrl}</a></p>
+                </div>
+            `
+      });
+    } catch (err) {
+      console.error('Failed to send admin reset email:', err);
+    }
+
+    return res.json({ ok: true, message: 'Reset link sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Database error' });
+  }
 });
 
 // Contact Us form
